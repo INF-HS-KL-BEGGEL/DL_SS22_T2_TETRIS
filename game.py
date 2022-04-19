@@ -1,4 +1,5 @@
 import pygame
+import cv2
 
 # Initialize the game engine
 from tetris import Tetris
@@ -66,6 +67,19 @@ class Game:
         self.draw_falling_piece()
         self.draw_next_figure()
 
+        font = pygame.font.SysFont('Calibri', 25, True, False)
+        font1 = pygame.font.SysFont('Calibri', 65, True, False)
+        text = font.render("Score: " + str(self.game.score), True, BLACK)
+        text_game_over = font1.render("Game Over", True, (255, 125, 0))
+        text_game_over1 = font1.render("Press ESC", True, (255, 215, 0))
+
+        self.screen.blit(text, [0, 0])
+        if self.game.state == "gameover":
+            self.screen.blit(text_game_over, [20, 200])
+            self.screen.blit(text_game_over1, [25, 265])
+
+        pygame.display.flip()
+
     def __init__(self):
         pygame.init()
 
@@ -96,28 +110,33 @@ class Game:
 
         self.handle_input()
 
-        self.draw()
-
-        font = pygame.font.SysFont('Calibri', 25, True, False)
-        font1 = pygame.font.SysFont('Calibri', 65, True, False)
-        text = font.render("Score: " + str(self.game.score), True, BLACK)
-        text_game_over = font1.render("Game Over", True, (255, 125, 0))
-        text_game_over1 = font1.render("Press ESC", True, (255, 215, 0))
-
-        self.screen.blit(text, [0, 0])
-        if self.game.state == "gameover":
-            self.screen.blit(text_game_over, [20, 200])
-            self.screen.blit(text_game_over1, [25, 265])
-
-        pygame.display.flip()
+    def grab(self, x, y, width, height):
+        "Grab a part of the screen"
+        # get the dimension of the surface
+        rect = pygame.Rect(x, y, width, height)
+        # copy the part of the screen
+        sub = self.screen.subsurface(rect)
+        # create another surface with dimensions
+        # This is done to unlock the screen surface
+        screenshot = pygame.Surface((width, height))
+        screenshot.blit(sub, (0, 0))
+        return screenshot
 
 
 if __name__ == '__main__':
 
     game = Game()
 
-    while not game.done:
-        game.step()
-        game.clock.tick(game.fps)
+    # while not game.done:
+    game.step()
+    game.draw()
+    test = game.grab(game.game.x, game.game.y, 500 - game.game.x - (500 - (game.game.x + game.game.zoom * game.game.width + game.game.zoom + 5 * game.game.zoom)), 500 - game.game.y)
+    print(pygame.surfarray.array3d(test))
+    print(pygame.surfarray.array3d(test).shape)
+    pygame.image.save(test, "screenshot.png")
+    cv2.imshow('image window', pygame.surfarray.array3d(test))
+    cv2.waitKey(0)
+        # game.clock.tick(game.fps)
+        # input()
 
-    pygame.quit()
+    # pygame.quit()

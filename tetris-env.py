@@ -9,14 +9,10 @@ class TetrisEnv(gym.Env):
 
     def step(self, action):
         self.game.step()
-        self.game.clock.tick(self.game.fps)
-        rect = pygame.Rect(25, 25, 100, 50)
-        sub = pygame.screen.subsurface(rect)
-        pygame.image.save(sub, "screenshot.jpg")
-
     
-    def render(self):
-        pass
+    def render(self, mode="human"):
+        self.game.draw()
+        self.game.clock.tick(self.game.fps)
 
     def reset(self):
         pass
