@@ -4,117 +4,120 @@ import pygame
 from tetris import Tetris
 from tetris_util import colors, WHITE, GRAY, BLACK
 
+class Game:
 
-def handle_input():
-    global done, pressing_down
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            done = True
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                game.rotate()
-            if event.key == pygame.K_DOWN:
-                pressing_down = True
-            if event.key == pygame.K_LEFT:
-                game.go_side(-1)
-            if event.key == pygame.K_RIGHT:
-                game.go_side(1)
-            if event.key == pygame.K_SPACE:
-                game.go_space()
-            if event.key == pygame.K_ESCAPE:
-                game.__init__(20, 10)
+    def handle_input(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.done = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    self.game.rotate()
+                if event.key == pygame.K_DOWN:
+                    self.pressing_down = True
+                if event.key == pygame.K_LEFT:
+                    self.game.go_side(-1)
+                if event.key == pygame.K_RIGHT:
+                    self.game.go_side(1)
+                if event.key == pygame.K_SPACE:
+                    self.game.go_space()
+                if event.key == pygame.K_ESCAPE:
+                    self.game.__init__(20, 10)
 
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_DOWN:
-                pressing_down = False
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_DOWN:
+                    self.pressing_down = False
 
+    def draw_field(self):
+        for i in range(self.game.height):
+            for j in range(self.game.width):
+                pygame.draw.rect(self.screen, GRAY, [self.game.x + self.game.zoom * j, self.game.y + self.game.zoom * i, self.game.zoom, self.game.zoom], 1)
+                if self.game.field[i][j] > 0:
+                    pygame.draw.rect(self.screen, colors[self.game.field[i][j]],
+                                     [self.game.x + self.game.zoom * j + 1, self.game.y + self.game.zoom * i + 1, self.game.zoom - 2, self.game.zoom - 1])
 
-def draw_field():
-    for i in range(game.height):
-        for j in range(game.width):
-            pygame.draw.rect(screen, GRAY, [game.x + game.zoom * j, game.y + game.zoom * i, game.zoom, game.zoom], 1)
-            if game.field[i][j] > 0:
-                pygame.draw.rect(screen, colors[game.field[i][j]],
-                                 [game.x + game.zoom * j + 1, game.y + game.zoom * i + 1, game.zoom - 2, game.zoom - 1])
+    def draw_falling_piece(self):
+        if self.game.figure is not None:
+            for i in range(4):
+                for j in range(4):
+                    p = i * 4 + j
+                    if p in self.game.figure.image():
+                        pygame.draw.rect(self.screen, colors[self.game.figure.color],
+                                         [self.game.x + self.game.zoom * (j + self.game.figure.x) + 1,
+                                          self.game.y + self.game.zoom * (i + self.game.figure.y) + 1,
+                                          self.game.zoom - 2, self.game.zoom - 2])
 
+    def draw_next_figure(self):
+        if self.game.next_figure is not None:
+            pygame.draw.rect(self.screen, BLACK, [self.game.x + self.game.zoom * self.game.width + self.game.zoom, self.game.y, 5 * self.game.zoom, 5 * self.game.zoom], 2)
+            for i in range(4):
+                for j in range(4):
+                    p = i * 4 + j
+                    x = self.game.x + self.game.zoom * self.game.width + self.game.zoom * (j + 1 + (0.5 if self.game.next_figure.width() % 2 == 1 else 0)) + self.game.zoom / 2 + 2
+                    y = self.game.y + self.game.zoom * (i + (0.5 if self.game.next_figure.height() % 2 == 1 else 0)) + self.game.zoom / 2 + 2
+                    if p in self.game.next_figure.image():
+                        pygame.draw.rect(self.screen, colors[self.game.next_figure.color],
+                                         [x, y,
+                                          self.game.zoom - 2, self.game.zoom - 2])
 
-def draw_falling_piece():
-    if game.figure is not None:
-        for i in range(4):
-            for j in range(4):
-                p = i * 4 + j
-                if p in game.figure.image():
-                    pygame.draw.rect(screen, colors[game.figure.color],
-                                     [game.x + game.zoom * (j + game.figure.x) + 1,
-                                      game.y + game.zoom * (i + game.figure.y) + 1,
-                                      game.zoom - 2, game.zoom - 2])
+    def draw(self):
+        self.screen.fill(WHITE)
+        self.draw_field()
+        self.draw_falling_piece()
+        self.draw_next_figure()
 
+    def __init__(self):
+        pygame.init()
 
-def draw_next_figure():
-    if game.next_figure is not None:
-        pygame.draw.rect(screen, BLACK, [game.x + game.zoom * game.width + game.zoom, game.y, 5 * game.zoom, 5 * game.zoom], 2)
-        for i in range(4):
-            for j in range(4):
-                p = i * 4 + j
-                x = game.x + game.zoom * game.width + game.zoom * (j + 1 + (0.5 if game.next_figure.width() % 2 == 1 else 0)) + game.zoom / 2 + 2
-                y = game.y + game.zoom * (i + (0.5 if game.next_figure.height() % 2 == 1 else 0)) + game.zoom / 2 + 2
-                if p in game.next_figure.image():
-                    pygame.draw.rect(screen, colors[game.next_figure.color],
-                                     [x, y,
-                                      game.zoom - 2, game.zoom - 2])
+        self.size = (500, 500)
+        self.screen = pygame.display.set_mode(self.size)
 
+        pygame.display.set_caption("Tetris")
 
-def draw():
-    screen.fill(WHITE)
-    draw_field()
-    draw_falling_piece()
-    draw_next_figure()
+        # Loop until the user clicks the close button.
+        self.done = False
+        self.clock = pygame.time.Clock()
+        self.fps = 25
+        self.game = Tetris(20, 10)
+        self.counter = 0
 
+        self.pressing_down = False
 
-if __name__ == '__main__':
-    pygame.init()
+    def step(self):
+        if self.game.figure is None:
+            self.game.new_figure()
+        self.counter += 1
+        if self.counter > 100000:
+            self.counter = 0
 
-    size = (500, 500)
-    screen = pygame.display.set_mode(size)
+        if self.counter % (self.fps // self.game.level // 2) == 0 or self.pressing_down:
+            if self.game.state == "start":
+                self.game.go_down()
 
-    pygame.display.set_caption("Tetris")
+        self.handle_input()
 
-    # Loop until the user clicks the close button.
-    done = False
-    clock = pygame.time.Clock()
-    fps = 25
-    game = Tetris(20, 10)
-    counter = 0
-
-    pressing_down = False
-
-    while not done:
-        if game.figure is None:
-            game.new_figure()
-        counter += 1
-        if counter > 100000:
-            counter = 0
-
-        if counter % (fps // game.level // 2) == 0 or pressing_down:
-            if game.state == "start":
-                game.go_down()
-
-        handle_input()
-
-        draw()
+        self.draw()
 
         font = pygame.font.SysFont('Calibri', 25, True, False)
         font1 = pygame.font.SysFont('Calibri', 65, True, False)
-        text = font.render("Score: " + str(game.score), True, BLACK)
+        text = font.render("Score: " + str(self.game.score), True, BLACK)
         text_game_over = font1.render("Game Over", True, (255, 125, 0))
         text_game_over1 = font1.render("Press ESC", True, (255, 215, 0))
 
-        screen.blit(text, [0, 0])
-        if game.state == "gameover":
-            screen.blit(text_game_over, [20, 200])
-            screen.blit(text_game_over1, [25, 265])
+        self.screen.blit(text, [0, 0])
+        if self.game.state == "gameover":
+            self.screen.blit(text_game_over, [20, 200])
+            self.screen.blit(text_game_over1, [25, 265])
 
         pygame.display.flip()
-        clock.tick(fps)
+
+
+if __name__ == '__main__':
+
+    game = Game()
+
+    while not game.done:
+        game.step()
+        game.clock.tick(game.fps)
 
     pygame.quit()
