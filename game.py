@@ -36,16 +36,18 @@ class Game:
 
     def handle_action(self, action):
         key = self.map_action_to_key(action)
+        if key is None:
+            return
         self.handle_input(key)
 
     def map_action_to_key(self, action):
         action_map = {
             Action.ROTATE: pygame.K_UP,
-            Action.DOWN: pygame.K_DOWN,
-            Action.LEFT: pygame.K_LEFT,
-            Action.RIGHT: pygame.K_RIGHT,
-            Action.SPACE: pygame.K_SPACE,
-            Action.ESCAPE: pygame.K_ESCAPE
+            Action.FAST_DROP: pygame.K_DOWN,
+            Action.MOVE_LEFT: pygame.K_LEFT,
+            Action.MOVE_RIGHT: pygame.K_RIGHT,
+            Action.INSTANT_DROP: pygame.K_SPACE,
+            Action.NOTHING: None
         }
         return action_map.get(action)
 
@@ -132,6 +134,7 @@ class Game:
         if mode is 'human':
             self.handle_human_input()
         else:
+            action = Action.ROTATE
             self.handle_action(action)
 
     def grab(self, x, y, width, height):

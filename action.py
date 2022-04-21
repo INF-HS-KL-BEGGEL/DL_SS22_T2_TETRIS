@@ -2,8 +2,8 @@ from enum import Enum
 
 class Action(Enum):
     ROTATE = 1
-    DOWN = 2
-    LEFT = 3
-    RIGHT = 4
-    SPACE = 5
-    ESCAPE = 6
+    FAST_DROP = 2
+    MOVE_LEFT = 3
+    MOVE_RIGHT = 4
+    INSTANT_DROP = 5
+    NOTHING = 6
