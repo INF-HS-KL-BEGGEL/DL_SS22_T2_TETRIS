@@ -22,17 +22,17 @@ class Game:
 
     def handle_input(self, key):
         if key == pygame.K_UP:
-            self.game.rotate()
+            self.tetris.rotate()
         if key == pygame.K_DOWN:
             self.pressing_down = True
         if key == pygame.K_LEFT:
-            self.game.go_side(-1)
+            self.tetris.go_side(-1)
         if key == pygame.K_RIGHT:
-            self.game.go_side(1)
+            self.tetris.go_side(1)
         if key == pygame.K_SPACE:
-            self.game.go_space()
+            self.tetris.go_space()
         if key == pygame.K_ESCAPE:
-            self.game.__init__(20, 10)
+            self.tetris.__init__(20, 10)
 
     def handle_action(self, action):
         key = self.map_action_to_key(action)
@@ -51,38 +51,37 @@ class Game:
         }
         return action_map.get(action)
 
-
     def draw_field(self):
-        for i in range(self.game.height):
-            for j in range(self.game.width):
-                pygame.draw.rect(self.screen, GRAY, [self.game.x + self.game.zoom * j, self.game.y + self.game.zoom * i, self.game.zoom, self.game.zoom], 1)
-                if self.game.field[i][j] > 0:
-                    pygame.draw.rect(self.screen, colors[self.game.field[i][j]],
-                                     [self.game.x + self.game.zoom * j + 1, self.game.y + self.game.zoom * i + 1, self.game.zoom - 2, self.game.zoom - 1])
+        for i in range(self.tetris.height):
+            for j in range(self.tetris.width):
+                pygame.draw.rect(self.screen, GRAY, [self.tetris.x + self.tetris.zoom * j, self.tetris.y + self.tetris.zoom * i, self.tetris.zoom, self.tetris.zoom], 1)
+                if self.tetris.field[i][j] > 0:
+                    pygame.draw.rect(self.screen, colors[self.tetris.field[i][j]],
+                                     [self.tetris.x + self.tetris.zoom * j + 1, self.tetris.y + self.tetris.zoom * i + 1, self.tetris.zoom - 2, self.tetris.zoom - 1])
 
     def draw_falling_piece(self):
-        if self.game.figure is not None:
+        if self.tetris.figure is not None:
             for i in range(4):
                 for j in range(4):
                     p = i * 4 + j
-                    if p in self.game.figure.image():
-                        pygame.draw.rect(self.screen, colors[self.game.figure.color],
-                                         [self.game.x + self.game.zoom * (j + self.game.figure.x) + 1,
-                                          self.game.y + self.game.zoom * (i + self.game.figure.y) + 1,
-                                          self.game.zoom - 2, self.game.zoom - 2])
+                    if p in self.tetris.figure.image():
+                        pygame.draw.rect(self.screen, colors[self.tetris.figure.color],
+                                         [self.tetris.x + self.tetris.zoom * (j + self.tetris.figure.x) + 1,
+                                          self.tetris.y + self.tetris.zoom * (i + self.tetris.figure.y) + 1,
+                                          self.tetris.zoom - 2, self.tetris.zoom - 2])
 
     def draw_next_figure(self):
-        if self.game.next_figure is not None:
-            pygame.draw.rect(self.screen, BLACK, [self.game.x + self.game.zoom * self.game.width + self.game.zoom, self.game.y, 5 * self.game.zoom, 5 * self.game.zoom], 2)
+        if self.tetris.next_figure is not None:
+            pygame.draw.rect(self.screen, BLACK, [self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom, self.tetris.y, 5 * self.tetris.zoom, 5 * self.tetris.zoom], 2)
             for i in range(4):
                 for j in range(4):
                     p = i * 4 + j
-                    x = self.game.x + self.game.zoom * self.game.width + self.game.zoom * (j + 1 + (0.5 if self.game.next_figure.width() % 2 == 1 else 0)) + self.game.zoom / 2 + 2
-                    y = self.game.y + self.game.zoom * (i + (0.5 if self.game.next_figure.height() % 2 == 1 else 0)) + self.game.zoom / 2 + 2
-                    if p in self.game.next_figure.image():
-                        pygame.draw.rect(self.screen, colors[self.game.next_figure.color],
+                    x = self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom * (j + 1 + (0.5 if self.tetris.next_figure.width() % 2 == 1 else 0)) + self.tetris.zoom / 2 + 2
+                    y = self.tetris.y + self.tetris.zoom * (i + (0.5 if self.tetris.next_figure.height() % 2 == 1 else 0)) + self.tetris.zoom / 2 + 2
+                    if p in self.tetris.next_figure.image():
+                        pygame.draw.rect(self.screen, colors[self.tetris.next_figure.color],
                                          [x, y,
-                                          self.game.zoom - 2, self.game.zoom - 2])
+                                          self.tetris.zoom - 2, self.tetris.zoom - 2])
 
     def draw(self):
         self.screen.fill(WHITE)
@@ -92,12 +91,12 @@ class Game:
 
         font = pygame.font.SysFont('Calibri', 25, True, False)
         font1 = pygame.font.SysFont('Calibri', 65, True, False)
-        text = font.render("Score: " + str(self.game.score), True, BLACK)
+        text = font.render("Score: " + str(self.tetris.score), True, BLACK)
         text_game_over = font1.render("Game Over", True, (255, 125, 0))
         text_game_over1 = font1.render("Press ESC", True, (255, 215, 0))
 
         self.screen.blit(text, [0, 0])
-        if self.game.state == "gameover":
+        if self.tetris.state == "gameover":
             self.screen.blit(text_game_over, [20, 200])
             self.screen.blit(text_game_over1, [25, 265])
 
@@ -115,23 +114,23 @@ class Game:
         self.done = False
         self.clock = pygame.time.Clock()
         self.fps = 25
-        self.game = Tetris(20, 10)
+        self.tetris = Tetris(20, 10)
         self.counter = 0
 
         self.pressing_down = False
 
     def step(self, mode='human1', action=None):
-        if self.game.figure is None:
-            self.game.new_figure()
+        if self.tetris.figure is None:
+            self.tetris.new_figure()
         self.counter += 1
         if self.counter > 100000:
             self.counter = 0
 
-        if self.counter % (self.fps // self.game.level // 2) == 0 or self.pressing_down:
-            if self.game.state == "start":
-                self.game.go_down()
+        if self.counter % (self.fps // self.tetris.level // 2) == 0 or self.pressing_down:
+            if self.tetris.state == "start":
+                self.tetris.go_down()
 
-        if mode is 'human':
+        if mode == 'human':
             self.handle_human_input()
         else:
             action = Action.ROTATE
@@ -149,6 +148,14 @@ class Game:
         screenshot.blit(sub, (0, 0))
         return screenshot
 
+    def screenshot(self):
+        surface = self.grab(self.tetris.x, self.tetris.y, 500 - self.tetris.x - (500 - (self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom + 5 * self.tetris.zoom)), 500 - self.tetris.y)
+        image = pygame.surfarray.array3d(surface)
+        return image
+
+    def screenshot_size(self):
+        return (500 - self.tetris.x - (500 - (self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom + 5 * self.tetris.zoom)), 500 - self.tetris.y, 3)
+
 
 if __name__ == '__main__':
 
@@ -157,7 +164,7 @@ if __name__ == '__main__':
     while not game.done:
         game.step()
         game.draw()
-    #test = game.grab(game.game.x, game.game.y, 500 - game.game.x - (500 - (game.game.x + game.game.zoom * game.game.width + game.game.zoom + 5 * game.game.zoom)), 500 - game.game.y)
+    #test =
     #print(pygame.surfarray.array3d(test))
     #print(pygame.surfarray.array3d(test).shape)
     #pygame.image.save(test, "screenshot.png")

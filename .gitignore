@@ -3,3 +3,4 @@
 .gradle
 venv
 **/__pycache__
+logs
