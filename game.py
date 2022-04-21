@@ -1,6 +1,8 @@
 import pygame
 import cv2
 
+from action import Action
+
 # Initialize the game engine
 from tetris import Tetris
 from tetris_util import colors, WHITE, GRAY, BLACK
@@ -37,7 +39,15 @@ class Game:
         self.handle_input(key)
 
     def map_action_to_key(self, action):
-        pass
+        action_map = {
+            Action.ROTATE: pygame.K_UP,
+            Action.DOWN: pygame.K_DOWN,
+            Action.LEFT: pygame.K_LEFT,
+            Action.RIGHT: pygame.K_RIGHT,
+            Action.SPACE: pygame.K_SPACE,
+            Action.ESCAPE: pygame.K_ESCAPE
+        }
+        return action_map.get(action)
 
 
     def draw_field(self):
@@ -108,7 +118,7 @@ class Game:
 
         self.pressing_down = False
 
-    def step(self, mode='human', action=None):
+    def step(self, mode='human1', action=None):
         if self.game.figure is None:
             self.game.new_figure()
         self.counter += 1
@@ -120,7 +130,7 @@ class Game:
                 self.game.go_down()
 
         if mode is 'human':
-            self.handle_input()
+            self.handle_human_input()
         else:
             self.handle_action(action)
 
@@ -141,16 +151,15 @@ if __name__ == '__main__':
 
     game = Game()
 
-    # while not game.done:
-    game.step()
-    game.draw()
-    test = game.grab(game.game.x, game.game.y, 500 - game.game.x - (500 - (game.game.x + game.game.zoom * game.game.width + game.game.zoom + 5 * game.game.zoom)), 500 - game.game.y)
-    print(pygame.surfarray.array3d(test))
-    print(pygame.surfarray.array3d(test).shape)
-    pygame.image.save(test, "screenshot.png")
-    cv2.imshow('image window', pygame.surfarray.array3d(test))
-    cv2.waitKey(0)
-        # game.clock.tick(game.fps)
-        # input()
-
-    # pygame.quit()
+    while not game.done:
+        game.step()
+        game.draw()
+    #test = game.grab(game.game.x, game.game.y, 500 - game.game.x - (500 - (game.game.x + game.game.zoom * game.game.width + game.game.zoom + 5 * game.game.zoom)), 500 - game.game.y)
+    #print(pygame.surfarray.array3d(test))
+    #print(pygame.surfarray.array3d(test).shape)
+    #pygame.image.save(test, "screenshot.png")
+    #cv2.imshow('image window', pygame.surfarray.array3d(test))
+    #cv2.waitKey(0)
+        game.clock.tick(game.fps)
+       
+    pygame.quit()
