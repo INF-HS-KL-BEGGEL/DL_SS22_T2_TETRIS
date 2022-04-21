@@ -4,11 +4,11 @@ from game import Game
 
 class TetrisEnv(gym.Env):
 
-    def __init__(self,env_config={}):
+    def __init__(self, env_config={}):
         self.game = Game()
 
     def step(self, action):
-        self.game.step()
+        self.game.step(action)
     
     def render(self, mode="human"):
         self.game.draw()

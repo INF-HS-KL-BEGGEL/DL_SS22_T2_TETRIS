@@ -7,27 +7,38 @@ from tetris_util import colors, WHITE, GRAY, BLACK
 
 class Game:
 
-    def handle_input(self):
+    def handle_human_input(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.done = True
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    self.game.rotate()
-                if event.key == pygame.K_DOWN:
-                    self.pressing_down = True
-                if event.key == pygame.K_LEFT:
-                    self.game.go_side(-1)
-                if event.key == pygame.K_RIGHT:
-                    self.game.go_side(1)
-                if event.key == pygame.K_SPACE:
-                    self.game.go_space()
-                if event.key == pygame.K_ESCAPE:
-                    self.game.__init__(20, 10)
+                self.handle_input(event.key)
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_DOWN:
                     self.pressing_down = False
+
+    def handle_input(self, key):
+        if key == pygame.K_UP:
+            self.game.rotate()
+        if key == pygame.K_DOWN:
+            self.pressing_down = True
+        if key == pygame.K_LEFT:
+            self.game.go_side(-1)
+        if key == pygame.K_RIGHT:
+            self.game.go_side(1)
+        if key == pygame.K_SPACE:
+            self.game.go_space()
+        if key == pygame.K_ESCAPE:
+            self.game.__init__(20, 10)
+
+    def handle_action(self, action):
+        key = self.map_action_to_key(action)
+        self.handle_input(key)
+
+    def map_action_to_key(self, action):
+        pass
+
 
     def draw_field(self):
         for i in range(self.game.height):
@@ -97,7 +108,7 @@ class Game:
 
         self.pressing_down = False
 
-    def step(self):
+    def step(self, mode='human', action=None):
         if self.game.figure is None:
             self.game.new_figure()
         self.counter += 1
@@ -108,7 +119,10 @@ class Game:
             if self.game.state == "start":
                 self.game.go_down()
 
-        self.handle_input()
+        if mode is 'human':
+            self.handle_input()
+        else:
+            self.handle_action(action)
 
     def grab(self, x, y, width, height):
         "Grab a part of the screen"
