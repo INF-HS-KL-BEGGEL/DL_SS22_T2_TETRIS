@@ -1,6 +1,9 @@
+from typing import List
+
+
 class Shape:
 
-    def __init__(self, rotations: list[list[int]], width: int, height: int):
+    def __init__(self, rotations: List[List[int]], width: int, height: int):
         self.__rotations = rotations
         self.__width = width
         self.__height = height
@@ -11,7 +14,7 @@ class Shape:
     def width(self) -> int:
         return self.__width
 
-    def rotation(self, index: int) -> list[int]:
+    def rotation(self, index: int) -> List[int]:
         return self.__rotations[index]
 
     def rotation_count(self) -> int:

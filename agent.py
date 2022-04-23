@@ -5,123 +5,94 @@ import gym
 import keras
 import numpy as np
 import tensorflow as tf
-from keras import Input, Model
+from keras import Input, Model, Sequential
 from keras.layers import Conv2D, BatchNormalization, MaxPooling2D, Dropout, Flatten, Dense
 from keras.optimizer_v2.adam import Adam
 
-# RL Constants:
-DISCOUNT               = 0.99
-REPLAY_MEMORY_SIZE     = 3_000   # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1_000   # Minimum number of steps in a memory to start training
-UPDATE_TARGET_EVERY    = 20      # Terminal states (end of episodes)
-MIN_REWARD             = 1000    # For model save
-SAVE_MODEL_EVERY       = 1000    # Episodes
-SHOW_EVERY             = 20      # Episodes
-EPISODES               = 10_000  # Number of episodes
-#  Stats settings
-AGGREGATE_STATS_EVERY = 20  # episodes
-SHOW_PREVIEW          = False
-MINIBATCH_SIZE = 16
+class DqnAgent:
+	"""
+	DQN Agent: the agent that explores the game and
+	should eventually learn how to play the game.
+	"""
 
+	def __init__(self, model_location='models'):
+		self.model_location = model_location
+		self.q_net = self._build_dqn_model()
+		self.target_q_net = self._build_dqn_model()
 
-class DQNAgent:
-    def __init__(self, name, env):
-        self.env = env
-        self.name = name
+		self.checkpoint = tf.train.Checkpoint(step=tf.Variable(0), net=self.q_net)
+		self.checkpoint_manager = tf.train.CheckpointManager(self.checkpoint, 'checkpoints', max_to_keep=10)
+		self.load_checkpoint()
 
-        # Main model
-        self.model = self.create_model()
+	def policy(self, state):
+		"""
+		Takes a state from the game environment and returns
+		a action that should be taken given the current game
+		environment.
+		"""
+		state_input = tf.convert_to_tensor(state[None, :], dtype=tf.float32)
+		action_q = self.q_net(state_input)
+		action = np.argmax(action_q.numpy()[0], axis=0)
+		return action
 
-        # Target network
-        self.target_model = self.create_model()
-        self.target_model.set_weights(self.model.get_weights())
+	def train(self, batch):
+		"""
+		Takes a batch of gameplay experiences from replay
+		buffer and train the underlying model with the batch
+		"""
+		state_batch, next_state_batch, action_batch, reward_batch, done_batch = batch
+		current_q = self.q_net(state_batch)
+		target_q = np.copy(current_q)
+		next_q = self.target_q_net(next_state_batch)
+		max_next_q = np.amax(next_q, axis=1)
+		for i in range(state_batch.shape[0]):
+			target_q[i][action_batch[i]] = reward_batch[i] if done_batch[i] else reward_batch[i] + 0.95 * max_next_q[i]
+		result = self.q_net.fit(x=state_batch, y=target_q)
+		return result.history['loss']
 
-        # An array with last n steps for training
-        self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
+	def collect_policy(self, state):
+		if np.random.random() < 0.05:
+			return np.random.randint(0, 6)
+		return self.policy(state)
 
-        # Custom tensorboard object
-        self.tensorboard = tf.keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=1)
+	def update_target_network(self):
+		pass
 
-        # Used to count when to update target network with main network's weights
-        self.target_update_counter = 0
+	def save_checkpoint(self):
+		self.checkpoint_manager.save()
 
-    # Creates the model with the given specifications:
-    def create_model(self):
-        return tf.keras.Sequential(layers=[
-            keras.Input(shape=self.env.getShape(), batch_size=MINIBATCH_SIZE),
-            tf.keras.layers.Conv2D(filters=2, kernel_size=3, activation='relu'),
-            tf.keras.layers.MaxPool2D(pool_size=(3, 3)),
-            tf.keras.layers.Conv2D(filters=4, kernel_size=3, activation='relu'),
-            tf.keras.layers.MaxPool2D(pool_size=(3, 3)),
-            tf.keras.layers.Conv2D(filters=8, kernel_size=3, activation='relu'),
-            tf.keras.layers.MaxPool2D(pool_size=(3, 3)),
+	def load_checkpoint(self):
+		self.checkpoint.restore(self.checkpoint_manager.latest_checkpoint)
 
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(units=1000, activation='relu'),
-            tf.keras.layers.Dense(units=1000, activation='relu'),
-            tf.keras.layers.Dense(units=self.env.ACTION_SPACE_SIZE, activation='softmax', name='output')
-        ])
+	def save_model(self):
+		tf.saved_model.save(self.q_net, self.model_location)
 
-    # Adds step's data to a memory replay array
-    # (observation space, action, reward, new observation space, done)
-    def update_replay_memory(self, transition):
-        self.replay_memory.append(transition)
+	def load_model(self):
+		self.q_net = tf.saved_model.load(self.model_location)
 
-    # Trains main network every step during episode
-    def train(self, terminal_state):
-        # Start training only if certain number of samples is already saved
-        if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
-            return
+	@staticmethod
+	def _build_dqn_model():
+		"""
+		Builds a deep neural net which predicts the Q values for all possible
+		actions given a state. The input should have the shape of the state
+		(which is 4 in CartPole), and the output should have the same shape as
+		the action space (which is 2 in CartPole) since we want 1 Q value per
+		possible action.
 
-        # Get a minibatch of random samples from memory replay table
-        minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+		:return: the Q network
+		"""
+		q_net = Sequential()
+		q_net.add(Conv2D(filters=4, kernel_size=(3, 3), activation='relu'))
+		q_net.add(MaxPooling2D())
+		q_net.add(Conv2D(filters=8, kernel_size=(3, 3), activation='relu'))
+		q_net.add(MaxPooling2D())
+		q_net.add(Conv2D(filters=16, kernel_size=(3, 3), activation='relu'))
+		q_net.add(MaxPooling2D())
 
-        # Get current states from minibatch, then query NN model for Q values
-        current_states = np.array([transition[0] for transition in minibatch])
-        current_qs_list = self.model.predict(current_states.reshape(-1, self.env.ENVIRONMENT_SHAPE))
+		q_net.add(Flatten())
 
-        # Get future states from minibatch, then query NN model for Q values
-        # When using target network, query it, otherwise main network should be queried
-        new_current_states = np.array([transition[3] for transition in minibatch])
-        future_qs_list = self.target_model.predict(new_current_states.reshape(-1, self.env.ENVIRONMENT_SHAPE))
-
-        X = []
-        y = []
-
-        # Now we need to enumerate our batches
-        for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
-
-            # If not a terminal state, get new q from future states, otherwise set it to 0
-            # almost like with Q Learning, but we use just part of equation here
-            if not done:
-                max_future_q = np.max(future_qs_list[index])
-                new_q = reward + DISCOUNT * max_future_q
-            else:
-                new_q = reward
-
-            # Update Q value for given state
-            current_qs = current_qs_list[index]
-            current_qs[action] = new_q
-
-            # And append to our training data
-            X.append(current_state)
-            y.append(current_qs)
-
-        # Fit on all samples as one batch, log only on terminal state
-        self.model.fit(x=np.array(X).reshape(-1, self.env.ENVIRONMENT_SHAPE),
-                       y=np.array(y),
-                       batch_size=MINIBATCH_SIZE, verbose=0,
-                       shuffle=False, callbacks=[self.tensorboard] if terminal_state else None)
-
-        # Update target network counter every episode
-        if terminal_state:
-            self.target_update_counter += 1
-
-        # If counter reaches set value, update target network with weights of main network
-        if self.target_update_counter > UPDATE_TARGET_EVERY:
-            self.target_model.set_weights(self.model.get_weights())
-            self.target_update_counter = 0
-
-    # Queries main network for Q values given current observation space (environment state)
-    def get_qs(self, state):
-        return self.model.predict(state.reshape(-1, self.env.ENVIRONMENT_SHAPE))
+		q_net.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
+		q_net.add(Dense(32, activation='relu', kernel_initializer='he_uniform'))
+		q_net.add(Dense(6, activation='linear', kernel_initializer='he_uniform'))
+		q_net.compile(optimizer=tf.optimizers.Adam(learning_rate=0.001), loss='mse')
+		return q_net

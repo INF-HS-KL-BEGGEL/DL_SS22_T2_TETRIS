@@ -3,7 +3,7 @@ import random
 from shape import *
 from tetris_util import colors
 
-figures: list[Shape] = [
+figures: List[Shape] = [
     LINE,
     Z,
     Z_INVERSE,
