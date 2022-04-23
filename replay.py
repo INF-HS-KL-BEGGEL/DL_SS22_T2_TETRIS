@@ -5,8 +5,8 @@ import numpy as np
 
 
 class ReplayBuffer:
-	def __init__(self):
-		self.gameplay_experiences = deque(maxlen=1000000)
+	def __init__(self, maxlen=1000000):
+		self.gameplay_experiences = deque(maxlen=maxlen)
 
 	def store_gameplay_experience(self, state, next_state, reward, action, done):
 		"""

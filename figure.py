@@ -3,7 +3,7 @@ import random
 from shape import *
 from tetris_util import colors
 
-figures: List[Shape] = [
+shapes: List[Shape] = [
     LINE,
     Z,
     Z_INVERSE,
@@ -21,18 +21,18 @@ class Figure:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.type = random.randint(0, len(figures) - 1)
-        self.color = random.randint(1, len(colors) - 1)
+        self.type = random.randint(0, len(shapes) - 1)
+        self.color = shapes[self.type].color()
         self.rotation = 0
 
     def image(self):
-        return figures[self.type].rotation(self.rotation)
+        return shapes[self.type].rotation(self.rotation)
 
     def rotate(self):
-        self.rotation = (self.rotation + 1) % figures[self.type].rotation_count()
+        self.rotation = (self.rotation + 1) % shapes[self.type].rotation_count()
 
     def width(self) -> int:
-        return figures[self.type].width()
+        return shapes[self.type].width()
 
     def height(self) -> int:
-        return figures[self.type].height()
+        return shapes[self.type].height()

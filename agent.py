@@ -17,10 +17,11 @@ class DqnAgent:
 
 	def __init__(self, model_location='models'):
 		self.model_location = model_location
+
 		self.q_net = self._build_dqn_model()
 		self.target_q_net = self._build_dqn_model()
 
-		self.checkpoint = tf.train.Checkpoint(step=tf.Variable(0), net=self.q_net)
+		self.checkpoint = tf.train.Checkpoint(step=tf.Variable(0), net=self.q_net, target_net=self.target_q_net)
 		self.checkpoint_manager = tf.train.CheckpointManager(self.checkpoint, 'checkpoints', max_to_keep=10)
 		self.load_checkpoint()
 
@@ -56,13 +57,21 @@ class DqnAgent:
 		return self.policy(state)
 
 	def update_target_network(self):
-		pass
+		print('==== UPDATE TARGET NET ====')
+		for a, b in zip(self.target_q_net.variables, self.q_net.variables):
+			a.assign(b)  # copies the variables of model_b into model_a
+		# self.target_q_net = self.q_net
+		# self.q_net = self._build_dqn_model()
 
 	def save_checkpoint(self):
 		self.checkpoint_manager.save()
 
 	def load_checkpoint(self):
 		self.checkpoint.restore(self.checkpoint_manager.latest_checkpoint)
+		if self.checkpoint.net:
+			self.q_net = self.checkpoint.net
+		if self.checkpoint.target_net:
+			self.target_q_net = self.checkpoint.target_net
 
 	def save_model(self):
 		tf.saved_model.save(self.q_net, self.model_location)

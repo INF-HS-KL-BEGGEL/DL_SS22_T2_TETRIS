@@ -35,12 +35,10 @@ class Game:
 			self.tetris.__init__(20, 10)
 
 	def handle_action(self, action):
-		print(action)
 		for event in pygame.event.get():
 			pass  # this is stupid
 
 		key = self.map_action_to_key(action)
-		print(key)
 		if key is None:
 			return
 		self.handle_input(key)
@@ -115,7 +113,7 @@ class Game:
 
 		pygame.display.flip()
 
-	def __init__(self):
+	def __init__(self, fps=25):
 		pygame.init()
 
 		self.size = (500, 500)
@@ -126,7 +124,7 @@ class Game:
 		# Loop until the user clicks the close button.
 		self.done = False
 		self.clock = pygame.time.Clock()
-		self.fps = 25
+		self.fps = fps
 		self.tetris = Tetris(20, 10)
 		self.counter = 0
 
