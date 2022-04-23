@@ -33,6 +33,7 @@ class TetrisEnv(gym.Env):
 
 	def reset(self):
 		self.game.tetris.__init__(20, 10)
+		self.last_score = 0
 		return self.render()
 
 	def __calc_reward(self):
