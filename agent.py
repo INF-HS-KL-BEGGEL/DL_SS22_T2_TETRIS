@@ -48,7 +48,9 @@ class DqnAgent:
 		max_next_q = np.amax(next_q, axis=1)
 		for i in range(state_batch.shape[0]):
 			target_q[i][action_batch[i]] = reward_batch[i] if done_batch[i] else reward_batch[i] + 0.95 * max_next_q[i]
+
 		result = self.q_net.fit(x=state_batch, y=target_q)
+
 		return result.history['loss']
 
 	def collect_policy(self, state):
@@ -91,17 +93,18 @@ class DqnAgent:
 		:return: the Q network
 		"""
 		q_net = Sequential()
-		q_net.add(Conv2D(filters=4, kernel_size=(3, 3), activation='relu'))
-		q_net.add(MaxPooling2D())
-		q_net.add(Conv2D(filters=8, kernel_size=(3, 3), activation='relu'))
-		q_net.add(MaxPooling2D())
 		q_net.add(Conv2D(filters=16, kernel_size=(3, 3), activation='relu'))
+		q_net.add(MaxPooling2D())
+		q_net.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu'))
+		q_net.add(MaxPooling2D())
+		q_net.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
 		q_net.add(MaxPooling2D())
 
 		q_net.add(Flatten())
 
+		q_net.add(Dense(256, activation='relu', kernel_initializer='he_uniform'))
+		q_net.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
 		q_net.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
-		q_net.add(Dense(32, activation='relu', kernel_initializer='he_uniform'))
 		q_net.add(Dense(6, activation='linear', kernel_initializer='he_uniform'))
 		q_net.compile(optimizer=tf.optimizers.Adam(learning_rate=0.001), loss='mse')
 		return q_net

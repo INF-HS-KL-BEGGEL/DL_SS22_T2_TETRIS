@@ -15,12 +15,12 @@ class ReplayBuffer:
 		"""
 		self.gameplay_experiences.append((state, next_state, reward, action, done))
 
-	def sample_gameplay_batch(self):
+	def sample_gameplay_batch(self, max_batch_size=128):
 		"""
 		Samples a batch of gameplay experiences
 		for training purposes.
 		"""
-		batch_size = min(128, len(self.gameplay_experiences))
+		batch_size = min(max_batch_size, len(self.gameplay_experiences))
 		sampled_gameplay_batch = sample(self.gameplay_experiences, batch_size)
 		state_batch, next_state_batch, action_batch, reward_batch, done_batch = [], [], [], [], []
 		for gameplay_experience in sampled_gameplay_batch:

@@ -144,6 +144,7 @@ class Game:
 		if mode == 'human':
 			self.handle_human_input()
 		else:
+			self.pressing_down = False
 			self.handle_action(action)
 
 	def grab(self, x, y, width, height):

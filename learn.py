@@ -6,13 +6,14 @@ from datetime import datetime
 
 import tensorflow as tf
 
-UPDATE_TARGET_EPISODES = 30
+UPDATE_TARGET_EPISODES = 20
 
 TENSORBOARD_DIR = './logs'
 
 logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 file_writer = tf.summary.create_file_writer(logdir + "/metrics")
 file_writer.set_as_default()
+
 
 def collect_gameplay_experience(env, agent, buffer, episode):
 	"""
@@ -23,24 +24,28 @@ def collect_gameplay_experience(env, agent, buffer, episode):
 	state = env.reset()
 	done = False
 	total_reward = 0
+	total_lines_cleared = 0
 	while not done:
 		action = agent.collect_policy(state)
 		next_state, reward, done, info = env.step(action)
 		buffer.store_gameplay_experience(state, next_state, reward, action, done)
 		state = next_state
 		total_reward += reward
+		total_lines_cleared += info
 	print(f'{total_reward=}')
 	tf.summary.scalar('total reward', data=total_reward, step=episode)
+	tf.summary.scalar('total lines', data=total_lines_cleared, step=episode)
 
 
 def train_model(episodes=6000):
 	env = TetrisEnv()
 	agent = DqnAgent()
-	buffer = ReplayBuffer(maxlen=100000)
+	buffer = ReplayBuffer(maxlen=10000)
 	for episode_cnt in range(episodes):  # Train the agent for 6000 episodes of the game
 		collect_gameplay_experience(env, agent, buffer,  episode_cnt)
-		gameplay_experience_batch = buffer.sample_gameplay_batch()
-		loss = agent.train(gameplay_experience_batch)
+		for i in range(4):
+			gameplay_experience_batch = buffer.sample_gameplay_batch(max_batch_size=32)
+			loss = agent.train(gameplay_experience_batch)
 		if episode_cnt % UPDATE_TARGET_EPISODES == 0:
 			agent.save_checkpoint()
 			agent.update_target_network()
@@ -66,6 +71,4 @@ def evaluate_training_result(env, agent):
 
 
 if __name__ == '__main__':
-	env, agent, buffer = train_model(1000)
-
-	print(evaluate_training_result(env, agent))
+	env, agent, buffer = train_model(50000)

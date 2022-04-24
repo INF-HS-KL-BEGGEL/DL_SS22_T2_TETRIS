@@ -9,7 +9,7 @@ class TetrisEnv(gym.Env):
 	ACTION_SPACE_SIZE = 6
 
 	def __init__(self, env_config={}):
-		self.game = Game(fps=2000)
+		self.game = Game(fps=1000)
 		self.last_score = 0
 
 	def step(self, action):
@@ -22,13 +22,13 @@ class TetrisEnv(gym.Env):
 
 		observation = self.render()
 		done = self.game.tetris.state == 'gameover'
-		info = None
-
 		reward = self.__calc_reward(figure_before_step, next_figure_before_step)
+
+		info = self.game.tetris.score - self.last_score
 		self.last_score = self.game.tetris.score
 
 		if done:
-			reward = 0
+			reward = -5
 
 		return observation, reward, done, info
 
@@ -44,16 +44,22 @@ class TetrisEnv(gym.Env):
 		return self.render()
 
 	def __calc_reward(self, figure_before_step, next_figure_before_step):
-		base_score = ((self.game.tetris.score - self.last_score) * 100000) + 1
-		figure_score = self.game.tetris.figure.y**2
-
-		extra_reward = 0
-		#  new figure
-		if self.game.tetris.next_figure != next_figure_before_step:
-			line_dropped = figure_before_step.y
-			extra_reward += self.__check_lines_for_placement(line_dropped)
-
-		return base_score + figure_score + extra_reward
+		# base_score = ((self.game.tetris.score - self.last_score) * 100000) + 1
+		# figure_score = self.game.tetris.figure.y**2
+		# figure_score = 0
+		#
+		# extra_reward = 0
+		# #  new figure
+		# if self.game.tetris.next_figure != next_figure_before_step:
+		# 	line_dropped = figure_before_step.y
+		# 	extra_reward += self.__check_lines_for_placement(line_dropped)
+		#
+		# return base_score + figure_score + extra_reward
+		if next_figure_before_step == self.game.tetris.next_figure:
+			base_figure_reward = (1 if self.game.tetris.figure.y > 6 else 0)
+		else:
+			base_figure_reward = (1 if figure_before_step.y > 6 else 0)
+		return ((2**(self.game.tetris.score - self.last_score) - 1) * 250) + base_figure_reward
 
 	def __check_lines_for_placement(self, line_y):
 		base_fill_score = 0
