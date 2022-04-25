@@ -9,7 +9,7 @@ class TetrisEnv(gym.Env):
 	ACTION_SPACE_SIZE = 6
 
 	def __init__(self, env_config={}):
-		self.game = Game(fps=1000)
+		self.game = Game(fps=25)
 		self.last_score = 0
 
 	def step(self, action):
