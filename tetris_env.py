@@ -1,5 +1,7 @@
 from copy import copy
+import enum
 
+import numpy as np
 import gym
 import pygame
 from game import Game
@@ -10,8 +12,10 @@ class TetrisEnv(gym.Env):
 	ACTION_SPACE_SIZE = 6
 
 	def __init__(self, env_config={}):
-		self.game = Game(fps=200)
+		self.game = Game(fps=25)
 		self.last_score = 0
+		self.last_hole_count = 0
+		self.last_bumps = 0
 
 	def step(self, action):
 
@@ -23,7 +27,7 @@ class TetrisEnv(gym.Env):
 
 		observation = self.render()
 		done = self.game.tetris.state == 'gameover'
-		reward = self.__calc_reward(figure_before_step, next_figure_before_step, action)
+		reward = self.__calc_reward_new(figure_before_step, next_figure_before_step, action)
 
 		info = self.game.tetris.score - self.last_score
 		self.last_score = self.game.tetris.score
@@ -36,26 +40,68 @@ class TetrisEnv(gym.Env):
 	def render(self, mode='human'):
 		self.game.draw()
 		self.game.clock.tick(self.game.fps)
-		observation = self.game.screenshot().astype('float32')
-		return observation
+		#observation = self.game.screenshot().astype('float32')
+		return np.array(self.game.tetris.field)
 
 	def reset(self):
 		self.game.tetris.__init__(20, 10)
 		self.last_score = 0
 		return self.render()
 
+	def __calc_reward_new(self, figure_before_step, next_figure_before_step, action):
+		# 1. Keine löcher
+		# 2. Wenige hügel
+		# 3. Zeile weg Reward
+
+		# wenn Block platziert
+		if figure_before_step != self.game.tetris.figure:
+			# 1
+			hole_count = self.__calculate_hole_count()
+			hole_delta = hole_count - self.last_hole_count
+			self.last_hole_count = hole_count
+			#2
+			bump_count = self.__calculate_bumps()
+			bump_delta = bump_count - self.last_bumps
+			self.last_bumps = bump_count
+			if bump_count < 6 and bump_delta > 0:
+				bump_delta = 0
+			#3
+			current_score = self.game.tetris.score
+			score_delta = current_score - self.last_score
+			return (-5 * hole_delta) + (-5 * bump_delta) + (20 * score_delta)
+
+		return 0
+
+	def __calculate_hole_count(self):
+		holes = [-1] * len(self.game.tetris.field[0])
+		hole_count = 0
+		for fieldRow in self.game.tetris.field:
+			for fieldX in range(len(fieldRow)):
+				if holes[fieldX] == -1 and fieldRow[fieldX] > 0:
+					holes[fieldX] = 0
+				elif holes[fieldX] >= 0 and fieldRow[fieldX] == 0:
+					holes[fieldX] += 1
+					hole_count += 1
+		return hole_count
+
+	def __calculate_bumps(self):
+		bumps = 0
+		highest_block_pos = [20] * len(self.game.tetris.field[0])
+		for x in range(len(self.game.tetris.field[0])):
+			for y in range(len(self.game.tetris.field)):
+				if self.game.tetris.field[y][x] > 0:
+					highest_block_pos[x] = y
+					break
+		
+		for i in range(1, len(highest_block_pos)):
+			bumps += abs(highest_block_pos[i] - highest_block_pos[i-1])
+		
+		return bumps
+
+
+
 	def __calc_reward(self, figure_before_step, next_figure_before_step, action):
-		# base_score = ((self.game.tetris.score - self.last_score) * 100000) + 1
-		# figure_score = self.game.tetris.figure.y**2
-		# figure_score = 0
-		#
-		# extra_reward = 0
-		# #  new figure
-		# if self.game.tetris.next_figure != next_figure_before_step:
-		# 	line_dropped = figure_before_step.y
-		# 	extra_reward += self.__check_lines_for_placement(line_dropped)
-		#
-		# return base_score + figure_score + extra_reward
+
 		if figure_before_step != self.game.tetris.figure:
 			shape = shapes[figure_before_step.type]
 			rotated_shape_height = shape.height() if figure_before_step.rotation % 2 == 0 else shape.width()
@@ -71,25 +117,17 @@ class TetrisEnv(gym.Env):
 				if shape_true_y + i > 19:
 					break
 				row = self.game.tetris.field[shape_true_y + i]
-#				print("Counting blocks at Y: ", 19 - shape_true_y - i)
 				tmpTotal = 0
 				for e in row:
 					if e > 0:
 						tmpTotal += 1
 				total += tmpTotal
-#				print("[", 19 - shape_true_y - i, "]Found ", tmpTotal, " blocks!")
-#			print("Total blocks in range: ", total)
-#			print("Rotation: ", figure_before_step.rotation)
 			total /= rotated_shape_height
 			print("Reward for block: ", total * total - (19 - shape_true_y))
 			return total * total - (19 - shape_true_y)
 		else:
 			return 0
-#		if next_figure_before_step == self.game.tetris.next_figure:
-#			base_figure_reward = (1 if self.game.tetris.figure.y > 6 else 0)
-#		else:
-#			base_figure_reward = (1 if figure_before_step.y > 6 else 0)
-#		return ((2**(self.game.tetris.score - self.last_score) - 1) * 250) + base_figure_reward
+
 
 	def __check_lines_for_placement(self, line_y):
 		base_fill_score = 0
