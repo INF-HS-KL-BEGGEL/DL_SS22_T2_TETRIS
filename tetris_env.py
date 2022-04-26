@@ -46,12 +46,20 @@ class TetrisEnv(gym.Env):
 	def reset(self):
 		self.game.tetris.__init__(20, 10)
 		self.last_score = 0
+		self.last_bumps = 0
+		self.last_hole_count = 0
 		return self.render()
 
 	def __calc_reward_new(self, figure_before_step, next_figure_before_step, action):
 		# 1. Keine löcher
 		# 2. Wenige hügel
 		# 3. Zeile weg Reward
+		# 4. niedrigerer block -> mehr punkte
+		
+		block_height = figure_before_step.y_adjusted() + shapes[figure_before_step.type].height()
+		reward_bonus = (block_height - 10) ** 2
+		if block_height < 10:
+			reward_bonus = 0
 
 		# wenn Block platziert
 		if figure_before_step != self.game.tetris.figure:
@@ -68,9 +76,12 @@ class TetrisEnv(gym.Env):
 			#3
 			current_score = self.game.tetris.score
 			score_delta = current_score - self.last_score
-			return (-5 * hole_delta) + (-5 * bump_delta) + (20 * score_delta)
 
-		return 0
+			reward = (-10 * hole_delta) + (-2.5 * bump_delta) + (1000 * score_delta) + (0.2 * reward_bonus)
+			print("Reward for block: ", reward)
+			return reward
+
+		return (0.2 * reward_bonus)
 
 	def __calculate_hole_count(self):
 		holes = [-1] * len(self.game.tetris.field[0])

@@ -41,7 +41,7 @@ class Figure:
 		return self.x + shapes[self.type].offset_x(self.rotation)
 
 	def y_adjusted(self) -> int:
-		return self.x + shapes[self.type].offset_y(self.rotation)
+		return self.y + shapes[self.type].offset_y(self.rotation)
 
 	def __eq__(self, other):
 		if not isinstance(other, Figure):

@@ -134,7 +134,7 @@ class Game:
 		if self.tetris.figure is None:
 			self.tetris.new_figure()
 		self.counter += 1
-		if self.counter > 100000:
+		if self.counter > 2:
 			self.counter = 0
 
 		if self.counter % (self.fps // self.tetris.level // 2) == 0 or self.pressing_down:
