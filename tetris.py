@@ -53,7 +53,7 @@ class Tetris:
                     zeros += 1
             if zeros == 0:
                 lines += 1
-                for i1 in range(i, 1, -1):
+                for i1 in range(i, -1, -1):
                     for j in range(self.width):
                         if i1 == 0:
                             self.field[i1][j] = 0
