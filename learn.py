@@ -6,7 +6,8 @@ from datetime import datetime
 
 import tensorflow as tf
 
-UPDATE_TARGET_EPISODES = 20
+UPDATE_TARGET_EPISODES = 750
+CHECKPOINT_INTERVAL = 100
 
 TENSORBOARD_DIR = './logs'
 
@@ -40,15 +41,16 @@ def collect_gameplay_experience(env, agent, buffer, episode):
 def train_model(episodes=6000):
 	env = TetrisEnv()
 	agent = DqnAgent()
-	buffer = ReplayBuffer(maxlen=10000)
+	buffer = ReplayBuffer(maxlen=20000)
 	for episode_cnt in range(episodes):  # Train the agent for 6000 episodes of the game
 		collect_gameplay_experience(env, agent, buffer,  episode_cnt)
-		for i in range(4):
+		for i in range(16):
 			gameplay_experience_batch = buffer.sample_gameplay_batch(max_batch_size=32)
 			loss = agent.train(gameplay_experience_batch)
 		if episode_cnt % UPDATE_TARGET_EPISODES == 0:
-			agent.save_checkpoint()
 			agent.update_target_network()
+		if episode_cnt % CHECKPOINT_INTERVAL == 0:
+			agent.save_checkpoint()
 
 	return env, agent, buffer
 
