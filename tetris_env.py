@@ -41,7 +41,17 @@ class TetrisEnv(gym.Env):
 		self.game.draw()
 		self.game.clock.tick(self.game.fps)
 		#observation = self.game.screenshot().astype('float32')
-		return np.array(self.game.tetris.field)
+		observation = np.array(self.game.tetris.field)
+		for y in range(len(observation)):
+			for x in range(len(observation[y])):
+				observation[y][x] = 0 if observation[y][x] == 0 else 1
+		if self.game.tetris.figure is not None:
+			for i in range(4):
+				for j in range(4):
+					p = i * 4 + j
+					if p in self.game.tetris.figure.image():
+						observation[i + self.game.tetris.figure.y][j + self.game.tetris.figure.x] = 1
+		return observation
 
 	def reset(self):
 		self.game.tetris.__init__(20, 10)
