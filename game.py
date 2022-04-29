@@ -62,7 +62,7 @@ class Game:
 								 [self.tetris.x + self.tetris.zoom * j, self.tetris.y + self.tetris.zoom * i,
 								  self.tetris.zoom, self.tetris.zoom], 1)
 				if self.tetris.field[i][j] > 0:
-					pygame.draw.rect(self.screen, colors[self.tetris.field[i][j]],
+					pygame.draw.rect(self.screen, colors[0],  #colors[self.tetris.field[i][j]],
 									 [self.tetris.x + self.tetris.zoom * j + 1,
 									  self.tetris.y + self.tetris.zoom * i + 1, self.tetris.zoom - 2,
 									  self.tetris.zoom - 1])
@@ -73,14 +73,14 @@ class Game:
 				for j in range(4):
 					p = i * 4 + j
 					if p in self.tetris.figure.image():
-						pygame.draw.rect(self.screen, colors[self.tetris.figure.color],
+						pygame.draw.rect(self.screen, colors[1],  # colors[self.tetris.figure.color],
 										 [self.tetris.x + self.tetris.zoom * (j + self.tetris.figure.x) + 1,
 										  self.tetris.y + self.tetris.zoom * (i + self.tetris.figure.y) + 1,
 										  self.tetris.zoom - 2, self.tetris.zoom - 2])
 
 	def draw_next_figure(self):
 		if self.tetris.next_figure is not None:
-			pygame.draw.rect(self.screen, BLACK,
+			pygame.draw.rect(self.screen, GRAY,
 							 [self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom,
 							  self.tetris.y, 5 * self.tetris.zoom, 5 * self.tetris.zoom], 2)
 			for i in range(4):
@@ -91,7 +91,7 @@ class Game:
 					y = self.tetris.y + self.tetris.zoom * (i + (
 						0.5 if self.tetris.next_figure.height() % 2 == 1 else 0)) + self.tetris.zoom / 2 + 2
 					if p in self.tetris.next_figure.image():
-						pygame.draw.rect(self.screen, colors[self.tetris.next_figure.color],
+						pygame.draw.rect(self.screen, colors[2],  # colors[self.tetris.next_figure.color],
 										 [x, y,
 										  self.tetris.zoom - 2, self.tetris.zoom - 2])
 
@@ -164,14 +164,9 @@ class Game:
 	def screenshot(self):
 		surface = self.grab(self.tetris.x, self.tetris.y, 500 - self.tetris.x - (500 - (
 					self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom + 5 * self.tetris.zoom)),
-							500 - self.tetris.y)
+							500 - self.tetris.y - (500 - (20 * self.tetris.zoom + self.tetris.y)))
 		image = pygame.surfarray.array3d(surface)
 		return image
-
-	def screenshot_size(self):
-		return (500 - self.tetris.x - (500 - (
-					self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom + 5 * self.tetris.zoom)),
-				500 - self.tetris.y, 3)
 
 
 if __name__ == '__main__':
