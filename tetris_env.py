@@ -50,7 +50,7 @@ class TetrisEnv(gym.Env):
 				for j in range(4):
 					p = i * 4 + j
 					if p in self.game.tetris.figure.image():
-						observation[i + self.game.tetris.figure.y][j + self.game.tetris.figure.x] = 1
+						observation[i + self.game.tetris.figure.y][j + self.game.tetris.figure.x] = 2
 		return observation
 
 	def reset(self):

@@ -21,7 +21,7 @@ class Figure:
 	def __init__(self, x, y):
 		self.x = x
 		self.y = y
-		self.type = random.randint(0, len(shapes) - 1)
+		self.type = random.randint(6, 6)
 		self.color = shapes[self.type].color()
 		self.rotation = 0
 
