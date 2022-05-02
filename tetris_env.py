@@ -10,6 +10,7 @@ from figure import *
 class TetrisEnv(gym.Env):
 
 	ACTION_SPACE_SIZE = 6
+	SNAPSHOT_RATE = 100
 
 	def __init__(self, env_config={}):
 		self.game = Game(fps=25)
@@ -54,6 +55,11 @@ class TetrisEnv(gym.Env):
 		return observation
 
 	def reset(self):
+		self.game.games_played += 1
+		if self.game.recording:
+			self.game.save_video()
+		if self.game.games_played % TetrisEnv.SNAPSHOT_RATE == 0:
+			self.game.record()
 		self.game.tetris.__init__(20, 10)
 		self.last_score = 0
 		self.last_bumps = 0
