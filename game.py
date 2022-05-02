@@ -144,8 +144,7 @@ class Game:
 		if self.tetris.figure is None:
 			self.tetris.new_figure()
 		if self.recording:
-			self.frame += 1
-			pygame.image.save(self.screen, (self.snapshot_dir_name + '/frame-%04d.png' % self.frame))
+			self.__record_frame()
 			
 		self.counter += 1
 		if self.counter > 100000:
@@ -160,6 +159,10 @@ class Game:
 		else:
 			self.pressing_down = False
 			self.handle_action(action)
+
+	def __record_frame(self):
+		self.frame += 1
+		pygame.image.save(self.screen, f'{self.snapshot_dir_name}/frame-{self.frame:05d}.png')
 
 	def grab(self, x, y, width, height):
 		"Grab a part of the screen"
@@ -202,7 +205,10 @@ class Game:
 			return
 		video_name = self.snapshot_dir_name + ".mp4"
 
-		images = [img for img in os.listdir(self.snapshot_dir_name) if img.endswith(".png")]
+		self.draw()
+		self.__record_frame()
+
+		images = [img for img in sorted(os.listdir(self.snapshot_dir_name)) if img.endswith(".png")]
 		frame = cv2.imread(os.path.join(self.snapshot_dir_name, images[0]))
 		height, width, layers = frame.shape
 
