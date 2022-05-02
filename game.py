@@ -3,15 +3,15 @@ import pygame, os, sys, cv2
 import os.path
 from datetime import datetime
 import pygame
-import tensorflow as tf
 
 import tensorflow as tf
+import numpy as np
 
 from action import Action, ACTION_SPACE_SIZE
 
 # Initialize the game engine
 from tetris import Tetris
-from tetris_util import colors, WHITE, GRAY, BLACK, GREEN
+from tetris_util import colors, WHITE, GRAY, BLACK, GREEN, ORANGE
 
 
 class Game:
@@ -169,18 +169,28 @@ class Game:
 		self.frame += 1
 		copied_screen = self.screen.copy()
 		if action is not None and action_q is not None:
-			max_rect_length = 25
+			max_rect_length = 50
 			rect_height = 10
 			font = pygame.font.SysFont('Calibri', rect_height)
 			rect_pos_x = 420
 			sum = tf.math.reduce_sum(action_q).numpy()
+			argmax = action = np.argmax(action_q.numpy()[0], axis=0)
+			color = BLACK
 			for i in range(ACTION_SPACE_SIZE):
+				color = BLACK
+				if i == action:
+					if argmax == action:
+						color = GREEN
+					else:
+						color = ORANGE
 				value = action_q[0][i].numpy() / sum
 				length = min(max_rect_length * abs(value), max_rect_length)
 				rect_origin = rect_pos_x if value >= 0 else rect_pos_x - length
-				pygame.draw.rect(copied_screen, GREEN if i == action else BLACK, [rect_origin, 300 + i*rect_height*1.5, length, rect_height])
+				pygame.draw.rect(copied_screen, color, [rect_origin, 300 + i*rect_height*1.5, length, rect_height])
 				text = font.render(Action(i).name, True, BLACK)
 				copied_screen.blit(text, [310, 300 + i*rect_height*1.5])
+				value_text = font.render(str(value), True, BLACK)
+				copied_screen.blit(value_text, [450, 300 + i*rect_height*1.5])
 		# 	pygame.draw.rect(self.copied_screen, BLACK,
 		# 					 [self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom,
 		# 					  self.tetris.y, 5 * self.tetris.zoom, 5 * self.tetris.zoom], 2)
