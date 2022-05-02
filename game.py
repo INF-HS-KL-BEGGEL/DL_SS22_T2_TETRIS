@@ -1,4 +1,4 @@
-import pygame
+import pygame, os, sys
 
 from action import Action
 
@@ -114,6 +114,9 @@ class Game:
 		pygame.display.flip()
 
 	def __init__(self, fps=25):
+		if len(sys.argv) > 1:
+			if sys.argv[1] == "headless":
+				os.environ["SDL_VIDEODRIVER"] = "dummy"
 		pygame.init()
 
 		self.size = (500, 500)
