@@ -56,7 +56,7 @@ class DqnAgent:
 	def collect_policy(self, state):
 		policy, action_q = self.policy(state)
 		if np.random.random() < 0.05:
-			return np.random.randint(0, 6), action_q
+			return np.random.randint(0, 5), action_q
 		return policy, action_q
 
 	def update_target_network(self):
