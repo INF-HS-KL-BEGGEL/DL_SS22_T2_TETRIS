@@ -5,6 +5,8 @@ from datetime import datetime
 import pygame
 import tensorflow as tf
 
+import tensorflow as tf
+
 from action import Action, ACTION_SPACE_SIZE
 
 # Initialize the game engine
@@ -171,8 +173,9 @@ class Game:
 			rect_height = 10
 			font = pygame.font.SysFont('Calibri', rect_height)
 			rect_pos_x = 420
+			sum = tf.math.reduce_sum(action_q).numpy()
 			for i in range(ACTION_SPACE_SIZE):
-				value = action_q[0][i].numpy()
+				value = action_q[0][i].numpy() / sum
 				length = min(max_rect_length * abs(value), max_rect_length)
 				rect_origin = rect_pos_x if value >= 0 else rect_pos_x - length
 				pygame.draw.rect(copied_screen, GREEN if i == action else BLACK, [rect_origin, 300 + i*rect_height*1.5, length, rect_height])
@@ -214,7 +217,7 @@ class Game:
 			os.mkdir("snapshots")
 		if not os.path.exists(self.snapshot_dir_name):
 			os.mkdir(self.snapshot_dir_name)
-		self.snapshot_dir_name +=  "/game_" + str(self.games_played)
+		self.snapshot_dir_name += "/game_" + str(self.games_played)
 		if not os.path.exists(self.snapshot_dir_name):
 			os.mkdir(self.snapshot_dir_name)
 
