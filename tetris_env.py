@@ -7,7 +7,7 @@ from figure import *
 
 class TetrisEnv(gym.Env):
 
-	SNAPSHOT_RATE = 1
+	SNAPSHOT_RATE = 100
 
 	def __init__(self, env_config={}):
 		self.game = Game(fps=25)
