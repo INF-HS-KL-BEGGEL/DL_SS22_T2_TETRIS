@@ -4,6 +4,7 @@ import os.path
 from datetime import datetime
 
 import numpy as np
+import tensorflow as tf
 
 from action import Action, ACTION_SPACE_SIZE
 
