@@ -170,7 +170,7 @@ class Game:
 			rect_height = 10
 			font = pygame.font.SysFont('Calibri', rect_height)
 			rect_pos_x = 420
-			sum = tf.math.reduce_sum(action_q).numpy()
+			sum = tf.math.reduce_sum(tf.abs(action_q)).numpy()
 			argmax = action = np.argmax(action_q.numpy()[0], axis=0)
 			color = BLACK
 			for i in range(ACTION_SPACE_SIZE):
