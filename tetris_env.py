@@ -9,7 +9,6 @@ from figure import *
 
 class TetrisEnv(gym.Env):
 
-	ACTION_SPACE_SIZE = 6
 	SNAPSHOT_RATE = 100
 
 	def __init__(self, env_config={}):
@@ -18,13 +17,12 @@ class TetrisEnv(gym.Env):
 		self.last_hole_count = 0
 		self.last_bumps = 0
 
-	def step(self, action):
-
+	def step(self, action, action_q=None):
 		figure_before_step = self.game.tetris.figure
 		next_figure_before_step = self.game.tetris.next_figure
 		field_before_step = copy(self.game.tetris.field)
 
-		self.game.step(mode='ai', action=action)
+		self.game.step(mode='ai', action=action, action_q=action_q)
 
 		observation = self.render()
 		done = self.game.tetris.state == 'gameover'
