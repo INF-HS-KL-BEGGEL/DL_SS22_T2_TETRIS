@@ -5,11 +5,11 @@ from datetime import datetime
 import pygame
 import tensorflow as tf
 
-from action import Action
+from action import Action, ACTION_SPACE_SIZE
 
 # Initialize the game engine
 from tetris import Tetris
-from tetris_util import colors, WHITE, GRAY, BLACK
+from tetris_util import colors, WHITE, GRAY, BLACK, GREEN
 
 
 class Game:
@@ -119,8 +119,8 @@ class Game:
 		pygame.display.flip()
 
 	def __init__(self, fps=25):
-		if "headless" in sys.argv:
-			os.environ["SDL_VIDEODRIVER"] = "dummy"
+		# if "headless" in sys.argv:
+		# 	os.environ["SDL_VIDEODRIVER"] = "dummy"
 		pygame.init()
 
 		self.size = (500, 500)
@@ -142,13 +142,12 @@ class Game:
 		self.recording = False
 		self.start_time = datetime.now().strftime("snapshot_%Y-%m-%d_%H-%M-%S")
 
-	def step(self, mode='human', action=None):
+	def step(self, mode='human', action=None, action_q=None):
 		if self.tetris.figure is None:
 			self.tetris.new_figure()
 		if self.recording:
-			self.frame += 1
-			pygame.image.save(self.screen, (self.snapshot_dir_name + '/frame-%04d.png' % self.frame))
-
+			self.__record_frame(action, action_q)
+			
 		self.counter += 1
 
 		if self.counter > 2:
@@ -163,6 +162,26 @@ class Game:
 		else:
 			self.pressing_down = False
 			self.handle_action(action)
+
+	def __record_frame(self, action=None, action_q=None):
+		self.frame += 1
+		copied_screen = self.screen.copy()
+		if action is not None and action_q is not None:
+			max_rect_length = 25
+			rect_height = 10
+			font = pygame.font.SysFont('Calibri', rect_height)
+			rect_pos_x = 420
+			for i in range(ACTION_SPACE_SIZE):
+				value = action_q[0][i].numpy()
+				length = min(max_rect_length * abs(value), max_rect_length)
+				rect_origin = rect_pos_x if value >= 0 else rect_pos_x - length
+				pygame.draw.rect(copied_screen, GREEN if i == action else BLACK, [rect_origin, 300 + i*rect_height*1.5, length, rect_height])
+				text = font.render(Action(i).name, True, BLACK)
+				copied_screen.blit(text, [310, 300 + i*rect_height*1.5])
+		# 	pygame.draw.rect(self.copied_screen, BLACK,
+		# 					 [self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom,
+		# 					  self.tetris.y, 5 * self.tetris.zoom, 5 * self.tetris.zoom], 2)
+		pygame.image.save(copied_screen, f'{self.snapshot_dir_name}/frame-{self.frame:05d}.png')
 
 	def grab(self, x, y, width, height):
 		"Grab a part of the screen"
@@ -184,8 +203,8 @@ class Game:
 		return image
 
 	def record(self):
-		if not "headless" in sys.argv:
-			return
+		# if not "headless" in sys.argv:
+		# 	return
 
 		self.frame = 0
 		self.recording = True
@@ -201,15 +220,18 @@ class Game:
 
 	def save_video(self):
 		self.recording = False
-		if not "headless" in sys.argv:
-			return
+		# if not "headless" in sys.argv:
+		# 	return
 		video_name = self.snapshot_dir_name + ".mp4"
 
-		images = [img for img in os.listdir(self.snapshot_dir_name) if img.endswith(".png")]
+		self.draw()
+		self.__record_frame()
+
+		images = [img for img in sorted(os.listdir(self.snapshot_dir_name)) if img.endswith(".png")]
 		frame = cv2.imread(os.path.join(self.snapshot_dir_name, images[0]))
 		height, width, layers = frame.shape
 
-		video = cv2.VideoWriter(video_name, 0x7634706d, 10.0, (width,height))
+		video = cv2.VideoWriter(video_name, 0x7634706d, 10.0, (width, height))
 		for image in images:
 			video.write(cv2.imread(os.path.join(self.snapshot_dir_name, image)))
 

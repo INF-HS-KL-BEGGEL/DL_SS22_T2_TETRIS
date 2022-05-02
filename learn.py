@@ -27,8 +27,8 @@ def collect_gameplay_experience(env, agent, buffer, episode):
 	total_reward = 0
 	total_lines_cleared = 0
 	while not done:
-		action = agent.collect_policy(state)
-		next_state, reward, done, info = env.step(action)
+		action, action_q = agent.collect_policy(state)
+		next_state, reward, done, info = env.step(action, action_q)
 		buffer.store_gameplay_experience(state, next_state, reward, action, done)
 		state = next_state
 		total_reward += reward
@@ -63,7 +63,7 @@ def evaluate_training_result(env, agent):
 		done = False
 		episode_reward = 0.0
 		while not done:
-			action = agent.policy(state)
+			action, _ = agent.policy(state)
 			next_state, reward, done, _ = env.step(action)
 			episode_reward += reward
 			state = next_state
