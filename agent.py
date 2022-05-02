@@ -34,7 +34,7 @@ class DqnAgent:
 		state_input = tf.convert_to_tensor(state[None, :], dtype=tf.float32)
 		action_q = self.q_net(state_input)
 		action = np.argmax(action_q.numpy()[0], axis=0)
-		return action
+		return action, action_q
 
 	def train(self, batch):
 		"""
@@ -54,9 +54,10 @@ class DqnAgent:
 		return result.history['loss']
 
 	def collect_policy(self, state):
+		policy, action_q = self.policy(state)
 		if np.random.random() < 0.05:
-			return np.random.randint(0, 6)
-		return self.policy(state)
+			return np.random.randint(0, 6), action_q
+		return policy, action_q
 
 	def update_target_network(self):
 		print('==== UPDATE TARGET NET ====')
