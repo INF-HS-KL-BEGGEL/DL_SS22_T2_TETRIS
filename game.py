@@ -1,3 +1,7 @@
+from cv2 import VideoWriter_fourcc
+import pygame, os, sys, cv2
+import os.path
+from datetime import datetime
 import pygame
 import tensorflow as tf
 
@@ -115,6 +119,8 @@ class Game:
 		pygame.display.flip()
 
 	def __init__(self, fps=25):
+		if "headless" in sys.argv:
+			os.environ["SDL_VIDEODRIVER"] = "dummy"
 		pygame.init()
 
 		self.size = (500, 500)
@@ -130,10 +136,19 @@ class Game:
 		self.counter = 0
 
 		self.pressing_down = False
+		self.snapshot_dir_name = None
+		self.frame = 0
+		self.games_played = 0
+		self.recording = False
+		self.start_time = datetime.now().strftime("snapshot_%Y-%m-%d_%H-%M-%S")
 
 	def step(self, mode='human', action=None):
 		if self.tetris.figure is None:
 			self.tetris.new_figure()
+		if self.recording:
+			self.frame += 1
+			pygame.image.save(self.screen, (self.snapshot_dir_name + '/frame-%04d.png' % self.frame))
+
 		self.counter += 1
 
 		if self.counter > 2:
@@ -167,6 +182,53 @@ class Game:
 							500 - self.tetris.y - (500 - (20 * self.tetris.zoom + self.tetris.y)))
 		image = pygame.surfarray.array3d(surface)
 		return image
+
+	def record(self):
+		if not "headless" in sys.argv:
+			return
+
+		self.frame = 0
+		self.recording = True
+		self.snapshot_dir_name = "snapshots/" + self.start_time
+
+		if not os.path.exists("snapshots"):
+			os.mkdir("snapshots")
+		if not os.path.exists(self.snapshot_dir_name):
+			os.mkdir(self.snapshot_dir_name)
+		self.snapshot_dir_name +=  "/game_" + str(self.games_played)
+		if not os.path.exists(self.snapshot_dir_name):
+			os.mkdir(self.snapshot_dir_name)
+
+	def save_video(self):
+		self.recording = False
+		if not "headless" in sys.argv:
+			return
+		video_name = self.snapshot_dir_name + ".mp4"
+
+		images = [img for img in os.listdir(self.snapshot_dir_name) if img.endswith(".png")]
+		frame = cv2.imread(os.path.join(self.snapshot_dir_name, images[0]))
+		height, width, layers = frame.shape
+
+		video = cv2.VideoWriter(video_name, 0x7634706d, 10.0, (width,height))
+		for image in images:
+			video.write(cv2.imread(os.path.join(self.snapshot_dir_name, image)))
+
+		cv2.destroyAllWindows()
+		video.release()
+
+		for file_name in os.listdir(self.snapshot_dir_name):
+			file = self.snapshot_dir_name + "/" + file_name
+			if os.path.isfile(file):
+				os.remove(file)
+
+		os.rmdir(self.snapshot_dir_name, dir_fd = None)
+
+		print("Created video!")
+
+	def screenshot_size(self):
+		return (500 - self.tetris.x - (500 - (
+					self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom + 5 * self.tetris.zoom)),
+				500 - self.tetris.y, 3)
 
 
 if __name__ == '__main__':

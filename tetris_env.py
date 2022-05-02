@@ -13,6 +13,7 @@ from figure import shapes
 class TetrisEnv(gym.Env):
 
 	ACTION_SPACE_SIZE = 6
+	SNAPSHOT_RATE = 100
 
 	def __init__(self, env_config={}):
 		self.game = Game(fps=25)
@@ -48,6 +49,11 @@ class TetrisEnv(gym.Env):
 		return observation
 
 	def reset(self):
+		self.game.games_played += 1
+		if self.game.recording:
+			self.game.save_video()
+		if self.game.games_played % TetrisEnv.SNAPSHOT_RATE == 0:
+			self.game.record()
 		self.game.tetris.__init__(20, 10)
 		self.last_score = 0
 		self.fitness = 0
@@ -120,7 +126,7 @@ class TetrisEnv(gym.Env):
 
 		return bumps
 
-	def __calc_reward(self, figure_before_step, next_figure_before_step):
+	def __calc_reward(self, figure_before_step, next_figure_before_step, action):
 		# base_score = ((self.game.tetris.score - self.last_score) * 100000) + 1
 		# figure_score = self.game.tetris.figure.y**2
 		# figure_score = 0
