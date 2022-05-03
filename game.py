@@ -1,10 +1,16 @@
-import pygame, os, sys
+from cv2 import VideoWriter_fourcc
+import pygame, os, sys, cv2
+import os.path
+from datetime import datetime
 
-from action import Action
+import numpy as np
+import tensorflow as tf
+
+from action import Action, ACTION_SPACE_SIZE
 
 # Initialize the game engine
 from tetris import Tetris
-from tetris_util import colors, WHITE, GRAY, BLACK
+from tetris_util import colors, WHITE, GRAY, BLACK, GREEN, ORANGE
 
 
 class Game:
@@ -79,7 +85,7 @@ class Game:
 
 	def draw_next_figure(self):
 		if self.tetris.next_figure is not None:
-			pygame.draw.rect(self.screen, BLACK,
+			pygame.draw.rect(self.screen, GRAY,
 							 [self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom,
 							  self.tetris.y, 5 * self.tetris.zoom, 5 * self.tetris.zoom], 2)
 			for i in range(4):
@@ -114,9 +120,8 @@ class Game:
 		pygame.display.flip()
 
 	def __init__(self, fps=25):
-		if len(sys.argv) > 1:
-			if sys.argv[1] == "headless":
-				os.environ["SDL_VIDEODRIVER"] = "dummy"
+		if "headless" in sys.argv:
+			os.environ["SDL_VIDEODRIVER"] = "dummy"
 		pygame.init()
 
 		self.size = (500, 500)
@@ -132,10 +137,18 @@ class Game:
 		self.counter = 0
 
 		self.pressing_down = False
+		self.snapshot_dir_name = None
+		self.frame = 0
+		self.games_played = 0
+		self.recording = False
+		self.start_time = datetime.now().strftime("snapshot_%Y-%m-%d_%H-%M-%S")
 
-	def step(self, mode='human', action=None):
+	def step(self, mode='human', action=None, action_q=None):
 		if self.tetris.figure is None:
 			self.tetris.new_figure()
+		if self.recording:
+			self.__record_frame(action, action_q)
+			
 		self.counter += 1
 		if self.counter > 2:
 			self.counter = 0
@@ -149,6 +162,37 @@ class Game:
 		else:
 			self.pressing_down = False
 			self.handle_action(action)
+
+	def __record_frame(self, action=None, action_q=None):
+		self.frame += 1
+		copied_screen = self.screen.copy()
+		if action is not None and action_q is not None:
+			max_rect_length = 50
+			rect_height = 10
+			font = pygame.font.SysFont('Calibri', rect_height)
+			rect_pos_x = 420
+			sum = tf.math.reduce_sum(tf.abs(action_q)).numpy()
+			argmax = action = np.argmax(action_q.numpy()[0], axis=0)
+			color = BLACK
+			for i in range(ACTION_SPACE_SIZE):
+				color = BLACK
+				if i == action:
+					if argmax == action:
+						color = GREEN
+					else:
+						color = ORANGE
+				value = action_q[0][i].numpy() / sum
+				length = min(max_rect_length * abs(value), max_rect_length)
+				rect_origin = rect_pos_x if value >= 0 else rect_pos_x - length
+				pygame.draw.rect(copied_screen, color, [rect_origin, 300 + i*rect_height*1.5, length, rect_height])
+				text = font.render(Action(i).name, True, BLACK)
+				copied_screen.blit(text, [310, 300 + i*rect_height*1.5])
+				value_text = font.render(str(value), True, BLACK)
+				copied_screen.blit(value_text, [450, 300 + i*rect_height*1.5])
+		# 	pygame.draw.rect(self.copied_screen, BLACK,
+		# 					 [self.tetris.x + self.tetris.zoom * self.tetris.width + self.tetris.zoom,
+		# 					  self.tetris.y, 5 * self.tetris.zoom, 5 * self.tetris.zoom], 2)
+		pygame.image.save(copied_screen, f'{self.snapshot_dir_name}/frame-{self.frame:05d}.png')
 
 	def grab(self, x, y, width, height):
 		"Grab a part of the screen"
@@ -168,6 +212,51 @@ class Game:
 							500 - self.tetris.y)
 		image = pygame.surfarray.array3d(surface)
 		return image
+
+	def record(self):
+		if not "headless" in sys.argv:
+			return
+
+		self.frame = 0
+		self.recording = True
+		self.snapshot_dir_name = "snapshots/" + self.start_time
+
+		if not os.path.exists("snapshots"):
+			os.mkdir("snapshots")
+		if not os.path.exists(self.snapshot_dir_name):
+			os.mkdir(self.snapshot_dir_name)
+		self.snapshot_dir_name += "/game_" + str(self.games_played)
+		if not os.path.exists(self.snapshot_dir_name):
+			os.mkdir(self.snapshot_dir_name)
+
+	def save_video(self):
+		self.recording = False
+		if not "headless" in sys.argv:
+			return
+		video_name = self.snapshot_dir_name + ".mp4"
+
+		self.draw()
+		self.__record_frame()
+
+		images = [img for img in sorted(os.listdir(self.snapshot_dir_name)) if img.endswith(".png")]
+		frame = cv2.imread(os.path.join(self.snapshot_dir_name, images[0]))
+		height, width, layers = frame.shape
+
+		video = cv2.VideoWriter(video_name, 0x7634706d, 10.0, (width, height))
+		for image in images:
+			video.write(cv2.imread(os.path.join(self.snapshot_dir_name, image)))
+
+		cv2.destroyAllWindows()
+		video.release()
+
+		for file_name in os.listdir(self.snapshot_dir_name):
+			file = self.snapshot_dir_name + "/" + file_name
+			if os.path.isfile(file):
+				os.remove(file)
+
+		os.rmdir(self.snapshot_dir_name, dir_fd = None)
+
+		print("Created video!")
 
 	def screenshot_size(self):
 		return (500 - self.tetris.x - (500 - (
