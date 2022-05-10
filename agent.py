@@ -97,9 +97,9 @@ class DqnAgent:
 
 		q_net.add(Flatten())
 
-		q_net.add(Dense(256, activation='relu', kernel_initializer='he_uniform'))
-		q_net.add(Dense(128, activation='relu', kernel_initializer='he_uniform'))
-		q_net.add(Dense(64, activation='relu', kernel_initializer='he_uniform'))
+		q_net.add(Dense(400, activation='relu', kernel_initializer='he_uniform'))
+		q_net.add(Dense(200, activation='relu', kernel_initializer='he_uniform'))
+		q_net.add(Dense(100, activation='relu', kernel_initializer='he_uniform'))
 		q_net.add(Dense(5, activation='linear', kernel_initializer='he_uniform'))
 		q_net.compile(optimizer=tf.optimizers.Adam(learning_rate=0.001), loss='mse')
 		return q_net
