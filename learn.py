@@ -1,3 +1,5 @@
+import os
+
 from agent import DqnAgent
 from replay import ReplayBuffer
 from tetris_env import TetrisEnv
@@ -10,7 +12,8 @@ UPDATE_TARGET_EPISODES = 20
 
 TENSORBOARD_DIR = './logs'
 
-logdir = "logs/scalars/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+learner_name = os.getenv('TENSORBOARD_NAME')
+logdir = f'logs/scalars/{learner_name + "-" if learner_name is not None else ""}{datetime.now().strftime("%Y%m%d-%H%M%S")}'
 file_writer = tf.summary.create_file_writer(logdir + "/metrics")
 file_writer.set_as_default()
 
