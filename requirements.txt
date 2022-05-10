@@ -7,6 +7,6 @@ jupyter-core==4.10.0
 jupyterlab-pygments==0.2.2
 jupyterlab-widgets==1.1.0
 gym==0.23.1
-
+opencv-python==4.5.5.64
 numpy~=1.22.3
 opencv-python~=4.5.5.64
