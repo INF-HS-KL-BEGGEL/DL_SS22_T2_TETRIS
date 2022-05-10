@@ -9,6 +9,8 @@ services:
       - ./snapshots:/app/snapshots
     environment:
       TENSORBOARD_NAME: "cooler-tetris-typ"
+      EPISODES_PER_EVAL: 1000
+      EVALS: 10
 
   tensorboard:
     image: tensorflow/tensorflow:2.8.0

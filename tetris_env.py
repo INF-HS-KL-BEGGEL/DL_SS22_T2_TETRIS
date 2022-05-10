@@ -52,11 +52,11 @@ class TetrisEnv(gym.Env):
 						observation[i + self.game.tetris.figure.y][j + self.game.tetris.figure.x] = 2
 		return observation
 
-	def reset(self):
+	def reset(self, eval=False):
 		self.game.games_played += 1
 		if self.game.recording:
 			self.game.save_video()
-		if self.game.games_played % TetrisEnv.SNAPSHOT_RATE == 0:
+		if self.game.games_played % TetrisEnv.SNAPSHOT_RATE == 0 or eval:
 			self.game.record()
 		self.game.tetris.__init__(20, 10)
 		self.last_score = 0
