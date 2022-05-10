@@ -148,9 +148,10 @@ class Game:
 			self.tetris.new_figure()
 		if self.recording:
 			self.__record_frame(action, action_q)
-			
+
+		max_counter = 2 if mode == 'ai' else 100000
 		self.counter += 1
-		if self.counter > 2:
+		if self.counter > max_counter:
 			self.counter = 0
 
 		if self.counter % (self.fps // self.tetris.level // 2) == 0 or self.pressing_down:

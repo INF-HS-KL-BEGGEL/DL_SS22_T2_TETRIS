@@ -36,10 +36,11 @@ class TetrisEnv(gym.Env):
 
 		return observation, reward, done, info
 
-	def render(self, mode='human'):
+	def render(self, mode='ai'):
 		self.game.draw()
-		self.game.clock.tick(self.game.fps)
-		#observation = self.game.screenshot().astype('float32')
+		if mode == 'human':
+			self.game.clock.tick(self.game.fps)
+
 		observation = np.array(self.game.tetris.field)
 		onlyFigureField = np.zeros(observation.shape, dtype=int)
 		for y in range(len(observation)):
