@@ -41,7 +41,7 @@ class TetrisEnv(gym.Env):
 		self.game.clock.tick(self.game.fps)
 		#observation = self.game.screenshot().astype('float32')
 		observation = np.array(self.game.tetris.field)
-		onlyFigureField = np.array(self.game.tetris.field)
+		onlyFigureField = np.zeros(observation.shape, dtype=int)
 		for y in range(len(observation)):
 			for x in range(len(observation[y])):
 				observation[y][x] = 0 if observation[y][x] == 0 else 1
