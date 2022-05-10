@@ -39,8 +39,8 @@ def collect_gameplay_experience(env, agent, buffer, episode):
 		total_reward += reward
 		total_lines_cleared += info
 	print(f'{total_reward=}')
-	tf.summary.scalar('total reward', data=total_reward, step=episode)
-	tf.summary.scalar('total lines', data=total_lines_cleared, step=episode)
+	tf.summary.scalar('total reward', data=total_reward, step=env.game.games_played)
+	tf.summary.scalar('total lines', data=total_lines_cleared, step=env.game.games_played)
 
 
 def generate_model():
