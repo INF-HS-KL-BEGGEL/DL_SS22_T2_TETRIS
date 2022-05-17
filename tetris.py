@@ -18,7 +18,7 @@ class Tetris:
     def __init__(self, height, width):
         self.height = height
         self.width = width
-        self.field = np.zeros((height, width))
+        self.field = np.zeros((height, width), dtype=int)
         self.score = 0
         self.state = "start"
 

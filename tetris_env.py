@@ -16,8 +16,6 @@ class TetrisEnv(gym.Env):
 		self.last_hole_count = 0
 		self.last_bumps = 0
 
-		self.observation_norm = np.vectorize(lambda x: 0 if x == 0 else 1)
-
 	def step(self, action, action_q=None):
 		figure_before_step = self.game.tetris.figure
 		next_figure_before_step = self.game.tetris.next_figure
@@ -43,7 +41,7 @@ class TetrisEnv(gym.Env):
 		if mode == 'human':
 			self.game.clock.tick(self.game.fps)
 
-		observation = self.observation_norm(self.game.tetris.field)
+		observation = np.where(self.game.tetris.field > 0, 1, 0)
 		onlyFigureField = np.zeros(observation.shape, dtype=int)
 		if self.game.tetris.figure is not None:
 			for i in range(4):
