@@ -91,3 +91,4 @@ if __name__ == '__main__':
 	for i in range(evals):
 		env, agent, buffer = train_model(env, agent, buffer, episodes_per_eval)
 		evaluate_training_result(env, agent)
+	agent.save_checkpoint()

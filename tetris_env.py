@@ -1,4 +1,3 @@
-from copy import copy
 import enum
 
 import numpy as np
@@ -17,10 +16,11 @@ class TetrisEnv(gym.Env):
 		self.last_hole_count = 0
 		self.last_bumps = 0
 
+		self.observation_norm = np.vectorize(lambda x: 0 if x == 0 else 1)
+
 	def step(self, action, action_q=None):
 		figure_before_step = self.game.tetris.figure
 		next_figure_before_step = self.game.tetris.next_figure
-		field_before_step = copy(self.game.tetris.field)
 
 		self.game.step(mode='ai', action=action, action_q=action_q)
 
@@ -33,6 +33,8 @@ class TetrisEnv(gym.Env):
 
 		if done:
 			reward = -100
+			if self.game.recording:
+				self.game.save_video()
 
 		return observation, reward, done, info
 
@@ -41,11 +43,8 @@ class TetrisEnv(gym.Env):
 		if mode == 'human':
 			self.game.clock.tick(self.game.fps)
 
-		observation = np.array(self.game.tetris.field)
+		observation = self.observation_norm(self.game.tetris.field)
 		onlyFigureField = np.zeros(observation.shape, dtype=int)
-		for y in range(len(observation)):
-			for x in range(len(observation[y])):
-				observation[y][x] = 0 if observation[y][x] == 0 else 1
 		if self.game.tetris.figure is not None:
 			for i in range(4):
 				for j in range(4):
@@ -58,9 +57,7 @@ class TetrisEnv(gym.Env):
 
 	def reset(self, eval=False):
 		self.game.games_played += 1
-		if self.game.recording:
-			self.game.save_video()
-		if self.game.games_played % TetrisEnv.SNAPSHOT_RATE == 0 or eval:
+		if eval:
 			self.game.record()
 		self.game.tetris.__init__(20, 10)
 		self.last_score = 0
@@ -96,7 +93,6 @@ class TetrisEnv(gym.Env):
 			score_delta = current_score - self.last_score
 
 			reward = (-10 * hole_delta) + (-2.5 * bump_delta) + (1000 * score_delta) + (0.2 * reward_bonus)
-			print("Reward for block: ", reward)
 			return reward
 
 		return (0.2 * reward_bonus)
@@ -152,7 +148,6 @@ class TetrisEnv(gym.Env):
 						tmpTotal += 1
 				total += tmpTotal
 			total /= rotated_shape_height
-			print("Reward for block: ", total * total - (19 - shape_true_y))
 			return total * total - (19 - shape_true_y)
 		else:
 			return 0
