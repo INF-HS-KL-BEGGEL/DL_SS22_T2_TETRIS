@@ -55,7 +55,7 @@ class TetrisEnv(gym.Env):
 
 	def reset(self, eval=False):
 		self.game.games_played += 1
-		if self.game.games_played % 5000 and self.epsilon > 0.01:
+		if self.game.games_played % 5000 == 0 and self.epsilon > 0.01:
 			self.epsilon -= 0.001
 		if eval:
 			self.game.record()
