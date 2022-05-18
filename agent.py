@@ -1,13 +1,10 @@
-from collections import deque
-from random import random
-
-import gym
-import keras
 import numpy as np
 import tensorflow as tf
-from keras import Input, Model, Sequential
-from keras.layers import Conv2D, BatchNormalization, MaxPooling2D, Dropout, Flatten, Dense
-from keras.optimizer_v2.adam import Adam
+from keras import Sequential
+from keras.layers import Flatten, Dense
+
+import action
+
 
 class DqnAgent:
 	"""
@@ -53,10 +50,10 @@ class DqnAgent:
 
 		return result.history['loss']
 
-	def collect_policy(self, state):
+	def collect_policy(self, state, epsilon=0.05):
 		policy, action_q = self.policy(state)
-		if np.random.random() < 0.05:
-			return np.random.randint(0, 5), action_q
+		if np.random.random() < epsilon:
+			return np.random.randint(0, action.ACTION_SPACE_SIZE), action_q
 		return policy, action_q
 
 	def update_target_network(self):
@@ -84,15 +81,6 @@ class DqnAgent:
 
 	@staticmethod
 	def _build_dqn_model():
-		"""
-		Builds a deep neural net which predicts the Q values for all possible
-		actions given a state. The input should have the shape of the state
-		(which is 4 in CartPole), and the output should have the same shape as
-		the action space (which is 2 in CartPole) since we want 1 Q value per
-		possible action.
-
-		:return: the Q network
-		"""
 		q_net = Sequential()
 
 		q_net.add(Flatten())

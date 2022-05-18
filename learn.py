@@ -32,7 +32,7 @@ def collect_gameplay_experience(env, agent, buffer, episode):
 	total_reward = 0
 	total_lines_cleared = 0
 	while not done:
-		action, action_q = agent.collect_policy(state)
+		action, action_q = agent.collect_policy(state, env.epsilon)
 		next_state, reward, done, info = env.step(action, action_q)
 		buffer.store_gameplay_experience(state, next_state, reward, action, done)
 		state = next_state
@@ -41,6 +41,7 @@ def collect_gameplay_experience(env, agent, buffer, episode):
 	print(f'{total_reward=}')
 	tf.summary.scalar('total reward', data=total_reward, step=env.game.games_played)
 	tf.summary.scalar('total lines', data=total_lines_cleared, step=env.game.games_played)
+	tf.summary.scalar('epsilon', data=env.epsilon, step=env.game.games_played)
 
 
 def generate_model():

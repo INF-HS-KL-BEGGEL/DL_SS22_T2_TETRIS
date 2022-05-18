@@ -2,7 +2,6 @@ import enum
 
 import numpy as np
 import gym
-import pygame
 from game import Game
 from figure import *
 
@@ -15,6 +14,7 @@ class TetrisEnv(gym.Env):
 		self.last_score = 0
 		self.last_hole_count = 0
 		self.last_bumps = 0
+		self.epsilon = 0.05
 
 	def step(self, action, action_q=None):
 		figure_before_step = self.game.tetris.figure
@@ -55,6 +55,8 @@ class TetrisEnv(gym.Env):
 
 	def reset(self, eval=False):
 		self.game.games_played += 1
+		if self.game.games_played % 5000 and self.epsilon > 0.01:
+			self.epsilon -= 0.001
 		if eval:
 			self.game.record()
 		self.game.tetris.__init__(20, 10)
