@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import tensorflow as tf
 from keras import Sequential
 from keras.layers import Flatten, Dense
@@ -17,8 +18,11 @@ class DqnAgent:
 
 		self.q_net = self._build_dqn_model()
 		self.target_q_net = self._build_dqn_model()
+		
+		self.q_alt_net = self._build_dqn_model()
+		self.target_q_alt_net = self._build_dqn_model()
 
-		self.checkpoint = tf.train.Checkpoint(step=tf.Variable(0), net=self.q_net, target_net=self.target_q_net)
+		self.checkpoint = tf.train.Checkpoint(step=tf.Variable(0), net=self.q_net, target_net=self.target_q_net,alt_net=self.q_alt_net, target_alt_net=self.target_q_alt_net)
 		self.checkpoint_manager = tf.train.CheckpointManager(self.checkpoint, 'checkpoints', max_to_keep=10)
 		self.load_checkpoint()
 
@@ -39,9 +43,10 @@ class DqnAgent:
 		buffer and train the underlying model with the batch
 		"""
 		state_batch, next_state_batch, action_batch, reward_batch, done_batch = batch
-		current_q = self.q_net(state_batch)
+		net_decider = random.randint(0,1)
+		current_q =  self.q_net(state_batch) if net_decider == 1 else self.q_alt_net(state_batch)
 		target_q = np.copy(current_q)
-		next_q = self.target_q_net(next_state_batch)
+		next_q = self.target_q_net(next_state_batch) if net_decider == 1 else self.target_q_alt_net(next_state_batch)
 		max_next_q = np.amax(next_q, axis=1)
 		for i in range(state_batch.shape[0]):
 			target_q[i][action_batch[i]] = reward_batch[i] if done_batch[i] else reward_batch[i] + 0.95 * max_next_q[i]
