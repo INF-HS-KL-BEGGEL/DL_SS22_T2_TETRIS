@@ -87,7 +87,7 @@ def evaluate_training_result(env, agent):
 
 if __name__ == '__main__':
 	evals = int(os.getenv('EVALS') or 1)
-	episodes_per_eval = int(os.getenv('EPISODES_PER_EVAL') or 10)
+	episodes_per_eval = int(os.getenv('EPISODES_PER_EVAL') or 2000)
 	env, agent, buffer = generate_model()
 	for i in range(evals):
 		env, agent, buffer = train_model(env, agent, buffer, episodes_per_eval)

@@ -15,6 +15,7 @@ class TetrisEnv(gym.Env):
 		self.last_hole_count = 0
 		self.last_bumps = 0
 		self.epsilon = 0.05
+		self.fitness = 0
 
 	def step(self, action, action_q=None):
 		figure_before_step = self.game.tetris.figure
@@ -66,36 +67,32 @@ class TetrisEnv(gym.Env):
 		return self.render()
 
 	def __calc_reward_new(self, figure_before_step, next_figure_before_step, action):
-		# 1. Keine löcher
-		# 2. Wenige hügel
-		# 3. Zeile weg Reward
-		# 4. niedrigerer block -> mehr punkte
-		
-		block_height = figure_before_step.y_adjusted() + shapes[figure_before_step.type].height()
-		reward_bonus = (block_height - 10) ** 2
-		if block_height < 10:
-			reward_bonus = 0
-
-		# wenn Block platziert
 		if figure_before_step != self.game.tetris.figure:
 			# 1
 			hole_count = self.__calculate_hole_count()
-			hole_delta = hole_count - self.last_hole_count
-			self.last_hole_count = hole_count
 			#2
 			bump_count = self.__calculate_bumps()
-			bump_delta = bump_count - self.last_bumps
-			self.last_bumps = bump_count
-			if bump_count < 6 and bump_delta > 0:
-				bump_delta = 0
 			#3
 			current_score = self.game.tetris.score
-			score_delta = current_score - self.last_score
 
-			reward = (-10 * hole_delta) + (-2.5 * bump_delta) + (1000 * score_delta) + (0.2 * reward_bonus)
+			summed_height = self.__calc_height()
+			# print(summed_height)
+
+			new_fitness = (-0.51 * summed_height) + (0.76 * current_score) + (-0.36 * hole_count) + (-0.18 * bump_count)
+			reward = new_fitness - self.fitness
+			self.fitness = new_fitness
 			return reward
 
-		return (0.2 * reward_bonus)
+		return 0
+
+	def __calc_height(self):
+		height = 0
+		for x in range(self.game.tetris.width):
+			for y, _ in enumerate(self.game.tetris.field):
+				if self.game.tetris.field[y][x] > 0:
+					height += self.game.tetris.height - y
+					break
+		return height
 
 	def __calculate_hole_count(self):
 		holes = [-1] * len(self.game.tetris.field[0])
