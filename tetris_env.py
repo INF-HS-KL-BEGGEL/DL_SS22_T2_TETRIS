@@ -1,4 +1,6 @@
 import enum
+import os
+from collections import deque
 
 import numpy as np
 import gym
@@ -14,7 +16,10 @@ class TetrisEnv(gym.Env):
 		self.last_score = 0
 		self.last_hole_count = 0
 		self.last_bumps = 0
-		self.epsilon = 0.05
+		self.default_epsilon = 0.10
+		self.min_epsilon = 0.01
+		self.target_score = (os.getenv('TARGET_SCORE') or 50)
+		self.last_scores = deque(maxlen=20)
 
 	def step(self, action, action_q=None):
 		figure_before_step = self.game.tetris.figure
@@ -33,6 +38,7 @@ class TetrisEnv(gym.Env):
 			reward = -100
 			if self.game.recording:
 				self.game.save_video()
+			self.last_scores.append(self.game.tetris.score)
 
 		return observation, reward, done, info
 
@@ -55,8 +61,6 @@ class TetrisEnv(gym.Env):
 
 	def reset(self, eval=False):
 		self.game.games_played += 1
-		if self.game.games_played % 5000 == 0 and self.epsilon > 0.01:
-			self.epsilon -= 0.001
 		if eval:
 			self.game.record()
 		self.game.tetris.__init__(20, 10)
@@ -161,3 +165,12 @@ class TetrisEnv(gym.Env):
 			base_fill_score += line_percentage * y**2
 
 		return base_fill_score
+
+	def get_epsilon(self):
+		if len(self.last_scores) == 0:
+			return self.default_epsilon
+		avg_score = sum(self.last_scores) / len(self.last_scores)
+		if avg_score > self.target_score:
+			return self.min_epsilon
+		else:
+			return self.default_epsilon
