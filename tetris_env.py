@@ -21,6 +21,10 @@ class TetrisEnv(gym.Env):
 		self.min_epsilon = 0.01
 		self.target_score = (os.getenv('TARGET_SCORE') or 50)
 		self.last_scores = deque(maxlen=20)
+		self.last_fields = deque(maxlen=2)
+
+		for i in range(2):
+			self.last_fields.append(np.zeros(self.game.tetris.field.shape))
 
 	def step(self, action, action_q=None):
 		figure_before_step = self.game.tetris.figure
@@ -49,15 +53,14 @@ class TetrisEnv(gym.Env):
 			self.game.clock.tick(self.game.fps)
 
 		observation = np.where(self.game.tetris.field > 0, 1, 0)
-		onlyFigureField = np.zeros(observation.shape, dtype=int)
 		if self.game.tetris.figure is not None:
 			for i in range(4):
 				for j in range(4):
 					p = i * 4 + j
 					if p in self.game.tetris.figure.image():
-						onlyFigureField[i + self.game.tetris.figure.y][j + self.game.tetris.figure.x] = 1
+						observation[i + self.game.tetris.figure.y][j + self.game.tetris.figure.x] = 1
 
-		observation = np.concatenate((observation, onlyFigureField))
+		observation = np.dstack((observation, self.last_fields[0], self.last_fields[1]))
 		return observation
 
 	def reset(self, eval=False):

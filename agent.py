@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import Flatten, Dense
+from keras.layers import Flatten, Dense, Conv2D, MaxPooling2D
 
 import action
 
@@ -83,8 +83,6 @@ class DqnAgent:
 	def _build_dqn_model():
 		q_net = Sequential()
 		q_net.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu'))
-		q_net.add(MaxPooling2D())
-		q_net.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
 		q_net.add(MaxPooling2D())
 		q_net.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
 		q_net.add(MaxPooling2D())
