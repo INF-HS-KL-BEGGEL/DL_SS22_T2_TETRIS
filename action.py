@@ -1,6 +1,6 @@
 from enum import Enum
 
-ACTION_SPACE_SIZE = 6
+ACTION_SPACE_SIZE = 5
 
 class Action(Enum):
     ROTATE = 0

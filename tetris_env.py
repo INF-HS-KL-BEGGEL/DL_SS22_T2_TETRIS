@@ -1,11 +1,9 @@
+import enum
+import os
 from collections import deque
-from copy import copy
 
-import tensorflow as tf
-
-import cv2
+import numpy as np
 import gym
-import pygame
 from game import Game
 from figure import shapes
 
@@ -17,13 +15,16 @@ class TetrisEnv(gym.Env):
 	def __init__(self, env_config={}):
 		self.game = Game(fps=25)
 		self.last_score = 0
-		self.fitness = 0
-		self.actions = deque(maxlen=10)
+		self.last_hole_count = 0
+		self.last_bumps = 0
+		self.default_epsilon = 0.10
+		self.min_epsilon = 0.01
+		self.target_score = (os.getenv('TARGET_SCORE') or 50)
+		self.last_scores = deque(maxlen=20)
 
 	def step(self, action, action_q=None):
 		figure_before_step = self.game.tetris.figure
 		next_figure_before_step = self.game.tetris.next_figure
-		field_before_step = copy(self.game.tetris.field)
 
 		self.game.step(mode='ai', action=action, action_q=action_q)
 
@@ -35,26 +36,38 @@ class TetrisEnv(gym.Env):
 		self.last_score = self.game.tetris.score
 
 		if done:
-			print("round fitness: ", self.fitness)
-			reward = -5
+			reward = -100
+			if self.game.recording:
+				self.game.save_video()
+			self.last_scores.append(self.game.tetris.score)
 
 		return observation, reward, done, info
 
-	def render(self, mode='human'):
+	def render(self, mode='ai'):
 		self.game.draw()
-		self.game.clock.tick(self.game.fps)
-		observation = tf.image.resize(self.game.screenshot(), (32, 40))
+		if mode == 'human':
+			self.game.clock.tick(self.game.fps)
+
+		observation = np.where(self.game.tetris.field > 0, 1, 0)
+		onlyFigureField = np.zeros(observation.shape, dtype=int)
+		if self.game.tetris.figure is not None:
+			for i in range(4):
+				for j in range(4):
+					p = i * 4 + j
+					if p in self.game.tetris.figure.image():
+						onlyFigureField[i + self.game.tetris.figure.y][j + self.game.tetris.figure.x] = 1
+
+		observation = np.concatenate((observation, onlyFigureField))
 		return observation
 
-	def reset(self):
+	def reset(self, eval=False):
 		self.game.games_played += 1
-		if self.game.recording:
-			self.game.save_video()
-		if self.game.games_played % TetrisEnv.SNAPSHOT_RATE == 0:
+		if eval:
 			self.game.record()
 		self.game.tetris.__init__(20, 10)
 		self.last_score = 0
-		self.fitness = 0
+		self.last_bumps = 0
+		self.last_hole_count = 0
 		return self.render()
 
 	def __calc_reward_new(self, figure_before_step, next_figure_before_step, action):
@@ -63,40 +76,31 @@ class TetrisEnv(gym.Env):
 		# 3. Zeile weg Reward
 		# 4. niedrigerer block -> mehr punkte
 
-		repeated_actions = len(list(filter(lambda x: x == action, self.actions))) + 1
-		base_reward = 1 / repeated_actions
-
 		block_height = figure_before_step.y_adjusted() + shapes[figure_before_step.type].height()
+		reward_bonus = (block_height - 10) ** 2
+		if block_height < 10:
+			reward_bonus = 0
+
 		# wenn Block platziert
 		if figure_before_step != self.game.tetris.figure:
 			# 1
 			hole_count = self.__calculate_hole_count()
+			hole_delta = hole_count - self.last_hole_count
+			self.last_hole_count = hole_count
 			#2
 			bump_count = self.__calculate_bumps()
+			bump_delta = bump_count - self.last_bumps
+			self.last_bumps = bump_count
+			if bump_count < 6 and bump_delta > 0:
+				bump_delta = 0
 			#3
 			current_score = self.game.tetris.score
+			score_delta = current_score - self.last_score
 
-			summed_height = self.__calc_height()
-			# print(summed_height)
+			reward = (-10 * hole_delta) + (-2.5 * bump_delta) + (1000 * score_delta) + (0.2 * reward_bonus)
+			return reward
 
-			new_fitness = (-0.51 * summed_height) + (0.76 * current_score) + (-0.36 * hole_count) + (-0.18 * bump_count)
-			reward = new_fitness - self.fitness
-			self.fitness = new_fitness
-			# print("Reward for block: ", reward)
-		else:
-			reward = block_height * 0.01 if block_height > 10 else 0
-
-		self.actions.append(action)
-		return base_reward + reward
-
-	def __calc_height(self):
-		height = 0
-		for x in range(self.game.tetris.width):
-			for y, _ in enumerate(self.game.tetris.field):
-				if self.game.tetris.field[y][x] > 0:
-					height += self.game.tetris.height - y
-					break
-		return height
+		return (0.2 * reward_bonus)
 
 	def __calculate_hole_count(self):
 		holes = [-1] * len(self.game.tetris.field[0])
@@ -124,23 +128,35 @@ class TetrisEnv(gym.Env):
 
 		return bumps
 
+
+
 	def __calc_reward(self, figure_before_step, next_figure_before_step, action):
-		# base_score = ((self.game.tetris.score - self.last_score) * 100000) + 1
-		# figure_score = self.game.tetris.figure.y**2
-		# figure_score = 0
-		#
-		# extra_reward = 0
-		# #  new figure
-		# if self.game.tetris.next_figure != next_figure_before_step:
-		# 	line_dropped = figure_before_step.y
-		# 	extra_reward += self.__check_lines_for_placement(line_dropped)
-		#
-		# return base_score + figure_score + extra_reward
-		if next_figure_before_step == self.game.tetris.next_figure:
-			base_figure_reward = (1 if self.game.tetris.figure.y > 6 else 0)
+
+		if figure_before_step != self.game.tetris.figure:
+			shape = shapes[figure_before_step.type]
+			rotated_shape_height = shape.height() if figure_before_step.rotation % 2 == 0 else shape.width()
+			shape_true_y = figure_before_step.y
+			if figure_before_step.type == 1 or figure_before_step.type == 2 or figure_before_step.type == 5 and figure_before_step.rotation == 2 or figure_before_step.type == 0 and figure_before_step.rotation % 2 == 1:
+				shape_true_y += 1
+
+			if shape_true_y < 0:
+				shape_true_y = 0
+
+			total = 0
+			for i in range(rotated_shape_height):
+				if shape_true_y + i > 19:
+					break
+				row = self.game.tetris.field[shape_true_y + i]
+				tmpTotal = 0
+				for e in row:
+					if e > 0:
+						tmpTotal += 1
+				total += tmpTotal
+			total /= rotated_shape_height
+			return total * total - (19 - shape_true_y)
 		else:
-			base_figure_reward = (1 if figure_before_step.y > 6 else 0)
-		return ((2**(self.game.tetris.score - self.last_score) - 1) * 250) + base_figure_reward
+			return 0
+
 
 	def __check_lines_for_placement(self, line_y):
 		base_fill_score = 0
@@ -150,3 +166,12 @@ class TetrisEnv(gym.Env):
 			base_fill_score += line_percentage * y**2
 
 		return base_fill_score
+
+	def get_epsilon(self):
+		if len(self.last_scores) == 0:
+			return self.default_epsilon
+		avg_score = sum(self.last_scores) / len(self.last_scores)
+		if avg_score > self.target_score:
+			return self.min_epsilon
+		else:
+			return self.default_epsilon

@@ -1,0 +1,22 @@
+version: '3.3'
+
+services:
+  learner:
+    build: .
+    volumes:
+      - ./logs:/app/logs
+      - ./checkpoints:/app/checkpoints
+      - ./snapshots:/app/snapshots
+    environment:
+      TENSORBOARD_NAME: "cooler-tetris-typ"
+      EPISODES_PER_EVAL: 1000
+      EVALS: 10
+
+  tensorboard:
+    image: tensorflow/tensorflow:2.8.0
+    ports:
+      - "6010:6006"
+    volumes:
+      - ./logs:/logs
+    entrypoint: "tensorboard --host 0.0.0.0 --logdir=/logs"
+

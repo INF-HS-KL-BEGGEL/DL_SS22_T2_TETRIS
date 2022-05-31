@@ -1,5 +1,6 @@
 from figure import Figure
 
+import numpy as np
 
 class Tetris:
     level = 2
@@ -17,14 +18,9 @@ class Tetris:
     def __init__(self, height, width):
         self.height = height
         self.width = width
-        self.field = []
+        self.field = np.zeros((height, width), dtype=int)
         self.score = 0
         self.state = "start"
-        for i in range(height):
-            new_line = []
-            for j in range(width):
-                new_line.append(0)
-            self.field.append(new_line)
 
         self.new_figure()
 
@@ -34,9 +30,10 @@ class Tetris:
 
     def intersects(self):
         intersection = False
+        image = self.figure.image()
         for i in range(4):
             for j in range(4):
-                if i * 4 + j in self.figure.image():
+                if i * 4 + j in image:
                     if i + self.figure.y > self.height - 1 or \
                             j + self.figure.x > self.width - 1 or \
                             j + self.figure.x < 0 or \
