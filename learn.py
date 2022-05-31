@@ -32,7 +32,6 @@ def collect_gameplay_experience(env, agent, buffer, episode):
 	total_reward = 0
 	total_lines_cleared = 0
 	current_epsilon = env.get_epsilon()
-	print(f'{current_epsilon=}')
 	while not done:
 		action, action_q = agent.collect_policy(state, current_epsilon)
 		next_state, reward, done, info = env.step(action, action_q)
