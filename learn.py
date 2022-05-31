@@ -38,6 +38,11 @@ def collect_gameplay_experience(env, agent, buffer, episode):
 		state = next_state
 		total_reward += reward
 		total_lines_cleared += info
+		train_model(env, agent, buffer)
+	if (episode) % CHECKPOINT_EPISODES == 0:
+		agent.save_checkpoint()
+	if (episode) % UPDATE_TARGET_EPISODES == 0:
+		agent.update_target_network()
 	print(f'{total_reward=}')
 	tf.summary.scalar('total reward', data=total_reward, step=env.game.games_played)
 	tf.summary.scalar('total lines', data=total_lines_cleared, step=env.game.games_played)
@@ -51,17 +56,10 @@ def generate_model():
 	return env, agent, buffer
 
 
-def train_model(env, agent, buffer, episodes=6000):
-	for episode_cnt in range(episodes):  # Train the agent for 6000 episodes of the game
-		collect_gameplay_experience(env, agent, buffer,  episode_cnt)
-		for i in range(4):
-			gameplay_experience_batch = buffer.sample_gameplay_batch(max_batch_size=32)
-			loss = agent.train(gameplay_experience_batch)
-		if (episode_cnt + 1) % CHECKPOINT_EPISODES == 0:
-			agent.save_checkpoint()
-		if (episode_cnt + 1) % UPDATE_TARGET_EPISODES == 0:
-			agent.update_target_network()
-
+def train_model(env, agent, buffer):
+	for i in range(2):
+		gameplay_experience_batch = buffer.sample_gameplay_batch(max_batch_size=32)
+		loss = agent.train(gameplay_experience_batch)
 	return env, agent, buffer
 
 
@@ -89,7 +87,10 @@ if __name__ == '__main__':
 	evals = int(os.getenv('EVALS') or 1)
 	episodes_per_eval = int(os.getenv('EPISODES_PER_EVAL') or 10)
 	env, agent, buffer = generate_model()
+	counter = 0
 	for i in range(evals):
-		env, agent, buffer = train_model(env, agent, buffer, episodes_per_eval)
+		for j in range(episodes_per_eval):
+			counter += 1
+			collect_gameplay_experience(env, agent, buffer, counter)
 		evaluate_training_result(env, agent)
 	agent.save_checkpoint()
