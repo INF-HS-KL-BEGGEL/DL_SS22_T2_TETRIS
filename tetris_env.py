@@ -60,8 +60,9 @@ class TetrisEnv(gym.Env):
 					if p in self.game.tetris.figure.image():
 						observation[i + self.game.tetris.figure.y][j + self.game.tetris.figure.x] = 1
 
-		observation = np.dstack((observation, self.last_fields[0], self.last_fields[1]))
-		return observation
+		complete_observation = np.dstack((observation, self.last_fields[0], self.last_fields[1]))
+		self.last_fields.append(observation)
+		return complete_observation
 
 	def reset(self, eval=False):
 		self.game.games_played += 1
