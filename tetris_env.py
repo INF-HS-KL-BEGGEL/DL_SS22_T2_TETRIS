@@ -29,7 +29,7 @@ class TetrisEnv(gym.Env):
 
 		observation = self.render()
 		done = self.game.tetris.state == 'gameover'
-		reward = self.__calc_reward_new(figure_before_step, next_figure_before_step, action)
+		reward = self.__calc_reward(figure_before_step, next_figure_before_step, action)
 
 		info = self.game.tetris.score - self.last_score
 		self.last_score = self.game.tetris.score
@@ -69,7 +69,7 @@ class TetrisEnv(gym.Env):
 		self.last_hole_count = 0
 		return self.render()
 
-	def __calc_reward_new(self, figure_before_step, next_figure_before_step, action):
+	def __calc_reward(self, figure_before_step, next_figure_before_step, action):
 		# 1. Keine löcher
 		# 2. Wenige hügel
 		# 3. Zeile weg Reward
@@ -126,45 +126,6 @@ class TetrisEnv(gym.Env):
 			bumps += abs(highest_block_pos[i] - highest_block_pos[i-1])
 		
 		return bumps
-
-
-
-	def __calc_reward(self, figure_before_step, next_figure_before_step, action):
-
-		if figure_before_step != self.game.tetris.figure:
-			shape = shapes[figure_before_step.type]
-			rotated_shape_height = shape.height() if figure_before_step.rotation % 2 == 0 else shape.width()
-			shape_true_y = figure_before_step.y
-			if figure_before_step.type == 1 or figure_before_step.type == 2 or figure_before_step.type == 5 and figure_before_step.rotation == 2 or figure_before_step.type == 0 and figure_before_step.rotation % 2 == 1:
-				shape_true_y += 1
-
-			if shape_true_y < 0:
-				shape_true_y = 0
-
-			total = 0
-			for i in range(rotated_shape_height):
-				if shape_true_y + i > 19:
-					break
-				row = self.game.tetris.field[shape_true_y + i]
-				tmpTotal = 0
-				for e in row:
-					if e > 0:
-						tmpTotal += 1
-				total += tmpTotal
-			total /= rotated_shape_height
-			return total * total - (19 - shape_true_y)
-		else:
-			return 0
-
-
-	def __check_lines_for_placement(self, line_y):
-		base_fill_score = 0
-		for y in range(line_y, min(line_y + 4, 19)):
-			line_count = len(list(filter(lambda x: x > 0, self.game.tetris.field[y])))
-			line_percentage = line_count / 10
-			base_fill_score += line_percentage * y**2
-
-		return base_fill_score
 
 	def get_epsilon(self):
 		if len(self.last_scores) == 0:
