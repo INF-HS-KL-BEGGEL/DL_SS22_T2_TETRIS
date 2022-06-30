@@ -22,11 +22,6 @@ done_eval_runs = 0
 
 
 def collect_gameplay_experience(env, agent, buffer, episode):
-	"""
-	The collect_gameplay_experience function plays the game "env" with the
-	instructions produced by "agent" and stores the gameplay experiences
-	into "buffer" for later training.
-	"""
 	state = env.reset()
 	done = False
 	total_reward = 0
@@ -68,7 +63,7 @@ def evaluate_training_result(env, agent):
 	global done_eval_runs
 	total_reward = 0.0
 	episodes_to_play = 10
-	for i in range(episodes_to_play):  # Play 10 episode and take the average
+	for i in range(episodes_to_play):
 		state = env.reset(eval=True)
 		done = False
 		episode_reward = 0.0

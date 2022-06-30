@@ -1,243 +1,52 @@
-# Technical Documentation
+# Development & Running
 
-## Dockerfile
+## Docker
+This project uses docker to run on university servers.
+Building the Image goes as follows:
+```shell
+docker build . -t tetris:latest
+```
+You can start the image using the provided `docker-compose.yml` using `docker-compose up -d`. This also starts an instance of TensorBoard, which will be accessible on port 6010.
 
-## docker-compose.yml
+## Requirements
+All python requirements are listed in `requirements.txt`, you can install them by using `python3 -m pip install -r requirements.txt`.
 
-## requirements.txt
+## Running the code
+### Training
+Training is started via the `learn.py` file.
+For training without rendering, pass the `headless` argument.
 
-## tetris_env.py
+### Tetris
+If you want to run tetris alone, start `game.py`.
 
-### class TetrisEnv
+# Code Documentation
 
-#### Variables
+## Tetris with pygame
+The base of this implementation is based on this [article](https://levelup.gitconnected.com/writing-tetris-in-python-2a16bddb5318).
 
-#### Methods
+Tetris itself consists of the following files:
+* game.py
+* tetris.py
+* figure.py
+* tetris_util.py
+* shape.py
 
-##### __init__
+## Agent
+The agent owns the neural networks and is in charge of generating actions based on states that are given to them.
 
-##### step
+The networks are managed through a CheckpointManager, which will periodically save checkpoints of the networks in the `./checkpoints` directory.
 
-##### render
+The policy-methods should be used for collecting actions. The `collect_policy`-method should be used for training, as it has an optional epsilon parameter for generating random actions. If no epsilon is given, the default value of 5% is used.
+For playing the game without training the normal `policy`-method should be used, as it will always return the action decided by the neural network.
 
-##### reset
+If you want to change the network architecture, do so in the `_build_dqn_model`-method, as multiple networks are required for the double-q-learning process and this ensures that both networks are of the same architecture at all times.
 
-##### __calc_reward_new
+## Replay Memory
+The replay memory is a wrapper around a builtin deque. It stores the last state, the action the agent decided, the calculated reward for said action, and the state that followed.
+This memory is sampled randomly during training.
 
-##### __calculate_hole_count
+## Tetris Environment
 
-##### __calculate_bumps
-
-##### __calc_reward
-
-##### __check_lines_for_placement
-
-##### get_epsilon
-
-## tetris_util.py
-
-## tetris.py
-
-### class Tetris
-
-#### Variables
-
-* level
-* score
-* state
-* field
-* height
-* weight
-* width
-* x
-* y
-* zoom
-* figure
-* next_figure
-
-#### Methods
-
-##### __init__
-
-##### new_figure
-
-##### intersects
-
-##### break_lines
-
-##### go_space
-
-##### go_down
-
-##### freeze
-
-##### go_side
-
-##### rotate
-
-## headless_optimized.prof
-
-## headless_with_render_enabled.prof
-
-## not_headless.prof
-
-## action.py
-
-### class Action
-
-#### Variables
-
-* ROTATE
-* FAST_DROP
-* MOVE_LEFT
-* MOVE_RIGHT
-* INSTANT_DROP
-* NOTHING
-
-## agent.py
-
-### class DqnAgent
-
-#### Methods
-
-##### __init__
-
-##### policy
-
-##### train
-
-##### collect_policy
-
-##### update_target_network
-
-##### save_checkpoint
-
-##### load_checkpoint
-
-##### save_model
-
-##### load_model
-
-##### _build_dqn_model
-
-## figure.py
-
-### class Figure
-
-#### Variables
-
-* x
-* y
-
-#### Methods
-
-##### __init__
-
-#####  image
-
-##### rotate
-
-##### width
-
-##### height
-
-##### x_adjusted
-
-##### y_adjusted
-
-##### __eq__
-
-## game.py
-
-### class Game
-
-#### Methods
-
-##### handle_human_input
-
-##### handle_input
-
-##### handle_action
-
-##### draw_field
-
-##### draw_falling_piece
-
-##### draw_next_figure
-
-##### draw
-
-##### __init__
-
-##### step
-
-##### __record_frame
-
-##### grab
-
-##### screenshot
-
-##### record
-
-##### save_video
-
-##### screenshot_size
-
-## learn.py
-
-### Methods
-
-#### collect_gameplay_experience
-
-#### generate_model
-
-#### train_model
-
-#### evaluate_training_result
-
-## replay.py
-
-### class Replay Buffer
-
-#### Methods
-
-##### __init__
-
-##### store_gameplay_experience
-
-##### sample_gameplay_batch
-
-## shape.py
-
-### class Rotation
-
-#### Methods
-
-##### __init__
-
-### class Shape
-
-#### Methods
-
-##### __init__
-
-##### height
-
-##### width
-
-##### color
-
-##### rotation
-
-##### offset_x
-
-##### offset_y
-
-##### rotation_count
-
-
-
-
-
+## Training
 
 

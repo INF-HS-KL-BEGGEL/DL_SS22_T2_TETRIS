@@ -59,9 +59,7 @@ class DqnAgent:
 	def update_target_network(self):
 		print('==== UPDATE TARGET NET ====')
 		for a, b in zip(self.target_q_net.variables, self.q_net.variables):
-			a.assign(b)  # copies the variables of model_b into model_a
-		# self.target_q_net = self.q_net
-		# self.q_net = self._build_dqn_model()
+			a.assign(b)
 
 	def save_checkpoint(self):
 		self.checkpoint_manager.save()
